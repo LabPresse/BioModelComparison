@@ -60,7 +60,7 @@ def get_retina_dataset_RFMiD():
         
         ### GET IMAGE REGION ###
         # Convert to numpy
-        mask = image.cpu().detach().numpy()
+        mask = image.cpu().detach().numpy()  # mask will be the not-black region of the image
         # Threshold image
         mask = mask[0, :, :] > threshold
         # Label connected components
