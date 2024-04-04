@@ -124,3 +124,11 @@ class UNet(nn.Module):
 
         # Return
         return x
+
+# Test model
+if __name__ == '__main__':
+    model = UNet(3, 1, n_features=8, n_blocks=3, n_layers_per_block=2)
+    x = torch.randn(1, 3, 256, 256)
+    y = model(x)
+    print(y.shape)
+    print(y.min(), y.max())
