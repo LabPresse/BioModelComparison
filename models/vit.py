@@ -1,5 +1,6 @@
 
 # Import libraries
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,7 +8,7 @@ import torch.nn.functional as F
 
 # Define transformer block
 class TransformerBlock(nn.Module):
-    def __init__(self, n_features, n_heads, mlp_ratio=2, dropout=0.1):
+    def __init__(self, n_features, n_heads, mlp_ratio=1.5, dropout=0.1):
         super(TransformerBlock, self).__init__()
 
         # Set up attributes
@@ -47,8 +48,8 @@ class TransformerBlock(nn.Module):
 class VisionTransformer(nn.Module):
     def __init__(self, 
             img_size, in_channels, out_channels,
-            n_layers=4, n_features=64,
-            n_heads=8, patch_size=16, use_cls_token=True, **kwargs
+            n_layers=8, n_features=64,
+            n_heads=16, patch_size=8, use_cls_token=True, **kwargs
         ):
         super(VisionTransformer, self).__init__()
 
@@ -68,12 +69,10 @@ class VisionTransformer(nn.Module):
         self.n_patches = n_patches
         self.shape_after_patch = shape_after_patch
 
-        # Set up embedding parameters
+        # Set up fixed parameters
+        self.pos_embed = nn.Parameter(torch.randn(1, n_patches + int(use_cls_token), n_features))
         if use_cls_token:
-            self.pos_embed = nn.Parameter(torch.zeros(1, n_patches + 1, n_features))
-            self.cls_token = nn.Parameter(torch.zeros(1, 1, n_features))
-        else:
-            self.pos_embed = nn.Parameter(torch.zeros(1, n_patches, n_features))
+            self.cls_token = nn.Parameter(torch.randn(1, 1, n_features))
 
         ### Set up blocks ###
 
@@ -92,17 +91,13 @@ class VisionTransformer(nn.Module):
             nn.ConvTranspose2d(n_features, out_channels, kernel_size=patch_size, stride=patch_size),
         )
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
         """Forward pass."""
 
         # Convert image to patch embeddings
         x = self.patch_embedding(x)  # Expected shape: (B, C, H, W)
-        x = x.flatten(2)             # Flatten patch embeddings
-        x = x.transpose(1, 2)        # Transpose for sequence-first format
-
-        # Apply mask if provided
-        if mask is not None:
-            x *= mask.unsqueeze(-1)  # Mask shape should be (B, N_patches)
+        x = x.flatten(2)             # Flatten patch embeddings to (B, C, N)
+        x = x.transpose(1, 2)        # Transpose for sequence-first format: (B, N, C)
 
         # Add class token
         if self.use_cls_token:
@@ -126,6 +121,32 @@ class VisionTransformer(nn.Module):
 
         # Return
         return x
+    
+    # Create mask
+    def create_mask(self, B, p=.5):
+        """Create a mask for the image."""
+
+        # Get constants
+        patch_size = self.patch_size
+        n_patches = self.n_patches
+        shape_after_patch = self.shape_after_patch
+        
+        # Randomly sample patches
+        mask_grid = (torch.rand(B, n_patches) > p).float()
+        mask_grid = mask_grid.view(B, *shape_after_patch).unsqueeze(1)
+
+        # Convert patch mask to image mask via convolution with a kernel of ones
+        mask = F.conv_transpose2d(
+            mask_grid, 
+            torch.ones(1, 1, patch_size, patch_size).to(mask_grid.device), 
+            stride=patch_size,
+        )
+
+        # Return
+        return mask
+        
+
+        
 
 
 # Test the class
