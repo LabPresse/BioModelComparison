@@ -9,9 +9,9 @@ from torch.utils.data import Dataset
 
 
 # Create a Retina vessel datset class
-class RetinaVesselDataset(Dataset):
-
+class RetinaDatasetFives(Dataset):
     def __init__(self, crop=(256, 256), scale=1):
+        super(RetinaDatasetFives, self).__init__()
 
         # Set up attributes
         self.crop = crop
@@ -19,15 +19,10 @@ class RetinaVesselDataset(Dataset):
         self.base_shape = (2048, 2048)
 
         # Set up root directory
-        self.root = os.path.join(
-            os.environ['DATAPATH'],
-            'Retinas',
-            'FIVES A Fundus Image Dataset for AI-based Vessel Segmentation',
-            'train',
-        )
+        self.root = os.path.join('data/retinas_FIVES')
 
         # Get files
-        self.files = os.listdir(os.path.join(self.root, 'Original'))
+        self.files = os.listdir(os.path.join(self.root, 'images'))
         self.files = [f for f in self.files if f.endswith('.png')]
 
     def __len__(self):
@@ -39,11 +34,11 @@ class RetinaVesselDataset(Dataset):
         file = self.files[idx]
 
         # Get image
-        image = Image.open(os.path.join(self.root, 'Original', file))
+        image = Image.open(os.path.join(self.root, 'images', file))
         image = transforms.ToTensor()(image)
 
         # Get mask
-        mask = Image.open(os.path.join(self.root, 'Ground truth', file))
+        mask = Image.open(os.path.join(self.root, 'masks', file))
         mask = transforms.ToTensor()(mask)
         mask = mask[0, :, :] > 0.5
         mask = mask.long()
@@ -55,12 +50,12 @@ class RetinaVesselDataset(Dataset):
 
         # Crop
         crop = self.crop
-        base_shape = self.base_shape
+        img_shape = image.shape[1:]
         if crop is not None:
-            x = torch.randint(0, base_shape[0] - crop[0], (1,)).item()
-            y = torch.randint(0, base_shape[1] - crop[1], (1,)).item()
-            image = image[:, x:x+crop[0], y:y+crop[1]]
-            mask = mask[x:x+crop[0], y:y+crop[1]]
+            row = torch.randint(0, img_shape[0] - crop[0], (1,)).item()
+            col = torch.randint(0, img_shape[1] - crop[1], (1,)).item()
+            image = image[:, row:row+crop[0], col:col+crop[1]]
+            mask = mask[row:row+crop[0], col:col+crop[1]]
 
         # Return
         return image, mask
@@ -70,7 +65,7 @@ class RetinaVesselDataset(Dataset):
 if __name__ == "__main__":
 
     # Create a dataset object
-    dataset = RetinaVesselDataset()
+    dataset = RetinaDatasetFives()
 
     # Set up a figure
     import matplotlib.pyplot as plt

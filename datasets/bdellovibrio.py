@@ -16,6 +16,9 @@ class BdellovibrioDataset(Dataset):
         super().__init__()
 
         # Set attributes
+        self.img_size = image_shape[0]
+        self.img_channels = 3
+        self.target_channels = 1
         self.data_path = data_path
         self.mask_path = mask_path
         self.dot_radius = dot_radius

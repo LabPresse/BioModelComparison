@@ -15,6 +15,9 @@ class RetinaRFMiDDataset(Dataset):
         super(RetinaRFMiDDataset, self).__init__()
 
         # Set up attributes
+        self.img_size = crop[0]
+        self.img_channels = 3
+        self.target_channels = 3
         self.crop = crop
         self.scale = scale
         self.base_shape = (2048, 2048)

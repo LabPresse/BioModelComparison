@@ -1,6 +1,9 @@
 
 # Import libraries
 import os
+import shutil
+import rarfile
+import requests
 from kaggle.api.kaggle_api_extended import KaggleApi
 
 # Authenticate the API
@@ -28,14 +31,8 @@ def get_retina_dataset_RFMiD():
     ### Set up directories ###
     print('Setting up directories')
 
-    # Create target directory
-    path_raw = os.path.join(root, 'retinas_RFMiD')
-    path_cleaned = os.path.join(root, 'retinas_RFMiD_cleaned')
-    if not os.path.exists(path_raw):
-        os.makedirs(path_raw)
-    if not os.path.exists(path_cleaned):
-        os.makedirs(path_cleaned)
-
+    # Set paths
+    path_data = os.path.join(root, 'retinas_RFMiD')
 
     ### Download raw data ###
     print('Downloading raw data')
@@ -43,7 +40,7 @@ def get_retina_dataset_RFMiD():
     # Download and unzip the dataset to the specified directory
     api.dataset_download_files(
         'andrewmvd/retinal-disease-classification', 
-        path=path_raw,
+        path=path_data,
         unzip=True
     )
 
@@ -116,21 +113,84 @@ def get_retina_dataset_RFMiD():
         print(f'-- Cleaning set: {set_path}')
 
         # Loop over images
-        files = os.listdir(os.path.join(path_raw, set_path))
+        files = os.listdir(os.path.join(path_data, set_path))
         files = [f for f in files if f.lower().endswith('.png')]
         for file in files:
 
             # Clean image and save
-            image = clean_image(os.path.join(path_raw, set_path, file))
-            image.save(os.path.join(path_cleaned, f'img{i}.png'))
+            image = clean_image(os.path.join(path_data, set_path, file))
+            image.save(os.path.join(path_data, f'img{i}.png'))
             i += 1
+
+    # Remove raw data
+    shutil.rmtree(os.path.join(path_data, 'Training_Set'))
+    shutil.rmtree(os.path.join(path_data, 'Test_Set'))
+    shutil.rmtree(os.path.join(path_data, 'Evaluation_Set'))
 
     # Done
     print('Finished downloading retina dataset RFMiD')
     return
 
+# Get retina dataset FIVES
+def get_retina_dataset_FIVES():
+    print('Getting retina dataset FIVES')
+
+    # Set paths
+    url = 'https://figshare.com/ndownloader/files/34969398'
+    path_data = os.path.join(root, 'retinas_FIVES')
+    path_data_images = os.path.join(path_data, 'images')
+    path_data_masks = os.path.join(path_data, 'masks')
+    download_path = os.path.join(path_data, 'FIVES.rar')
+
+    # Download the file
+    print("Starting download...")
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open(download_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                file.write(chunk)
+        print("Download completed successfully.")
+    else:
+        print("Failed to download the file. Status code:", response.status_code)
+        return
+
+    # Extract the file
+    try:
+        print("Starting extraction...")
+        with rarfile.RarFile(download_path) as rf:
+            rf.extractall(path_data)
+        print("Extraction completed successfully.")
+    except rarfile.Error as e:
+        print("Failed to extract the file:", e)
+    
+    # Remove rar file
+    os.remove(download_path)
+
+    # Move images to base directory
+    default_path = os.path.join(path_data, 'FIVES A Fundus Image Dataset for AI-based Vessel Segmentation')
+    i = 0
+    for folder in ['train', 'test']:
+        files = os.listdir(os.path.join(default_path, folder, 'Original'))
+        files = [f for f in files if f.lower().endswith('.png')]
+        for file in files:
+            os.rename(
+                os.path.join(default_path, folder, 'Original', file), 
+                os.path.join(path_data_images, f'img{i}.png')
+            )
+            os.rename(
+                os.path.join(default_path, folder, 'Ground truth', file), 
+                os.path.join(path_data_masks, f'img{i}.png')
+            )
+            i += 1
+
+    # Remove default_path
+    shutil.rmtree(default_path)
+    
+    # Done
+    print('Finished downloading retina dataset FIVES')
+    return
 
 # Download datasets
-get_retina_dataset_RFMiD()
-
+# get_retina_dataset_RFMiD()
+get_retina_dataset_FIVES()
 

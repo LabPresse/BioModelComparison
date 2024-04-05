@@ -161,3 +161,6 @@ cython_debug/
 
 # Keep data directory, but ignore contents
 data/*
+
+# Keep outfiles directory, but ignore contents
+outfiles/*

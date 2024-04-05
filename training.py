@@ -10,15 +10,12 @@ from torch.utils.data import DataLoader
 # Import local modules
 from helper_functions import plot_images
 
-# Set environment
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 
 # Define training function
-def train(model, dataset_train, dataset_val, savepath,
+def train_model(model, dataset_train, dataset_val, savepath,
     segmentation=False, autoencoder=False, mae=False,
     batch_size=32, n_epochs=100, lr=1e-3,
-    verbose=True, plot=True,
+    verbose=True, plot=True, device=torch.device('cpu'),
     ):
 
     # Print status
@@ -26,13 +23,20 @@ def train(model, dataset_train, dataset_val, savepath,
         status = f'Training model with {sum(p.numel() for p in model.parameters())} parameters.'
         print(status)
 
+    # Track training stats
+    train_losses = []
+    val_losses = []
+    min_val_loss = float('inf')
+    epoch_times = []
+
     # Set up data loaders
     dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
     dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
 
-    # Set up optimizer
+    # Set up model and optimizer
+    model = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # max_grad_norm = 1
+    max_grad_norm = 1
 
     # Set up criterion
     if segmentation:
@@ -49,8 +53,9 @@ def train(model, dataset_train, dataset_val, savepath,
             x = x.to(device).float()
             y = y.to(device).long()
         elif autoencoder:
-            x = batch.to(device).float()
-            y = batch.to(device).float()
+            x, _ = batch
+            x = x.to(device).float()
+            y = x.clone()
             if mae:
                 mask = model.create_mask(x.shape[0]).to(device)
                 x = x * mask
@@ -63,12 +68,6 @@ def train(model, dataset_train, dataset_val, savepath,
 
         # Return loss
         return loss
-
-    # Track training stats
-    train_losses = []
-    val_losses = []
-    min_val_loss = float('inf')
-    epoch_times = []
 
     # Train model
     for epoch in range(n_epochs):
@@ -92,7 +91,7 @@ def train(model, dataset_train, dataset_val, savepath,
 
             # Backward pass
             loss.backward()
-            # nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+            nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
             optimizer.step()
 
             # Update loss
@@ -130,20 +129,18 @@ def train(model, dataset_train, dataset_val, savepath,
         
         # Plot images
         if plot:
-            batch = next(iter(dataloader_val))
+            x, y = next(iter(dataloader_val))
+            x = x.to(device).float()
+            y = y.to(device).long()
             if segmentation:
-                x, y = batch
-                x = x.to(device).float()
                 z = model(x).argmax(dim=1)
-                plot_images(images=x[:5], targets=y[:5], predictions=z[:5])
             elif autoencoder:
-                x = batch.to(device).float()
-                y = batch.to(device).float()
+                y = x.clone()
                 if mae:
-                    mask = model.create_mask(y.shape[0]).to(device)
+                    mask = model.create_mask(x.shape[0]).to(device)
                     x = x * mask
                 z = model(x)
-                plot_images(images=x[:5], targets=y[:5], predictions=z[:5])
+            plot_images(Images=x[:5], Predictions=z[:5], Targets=y[:5])
             plt.pause(1)
 
     # Load best model
@@ -162,27 +159,3 @@ def train(model, dataset_train, dataset_val, savepath,
         print('Training complete.')
     return model, statistics
 
-# Test
-if __name__ == '__main__':
-
-    # Import local modules
-    from models.vit import VisionTransformer
-    from datasets.retinas_RFMiD import RetinaRFMiDDataset
-
-    # Set up model
-    model = VisionTransformer(128, 3, 3).to(device)
-
-    # Set up datasets
-    dataset = RetinaRFMiDDataset(crop=(128, 128), scale=2)
-    split = int(.8 * len(dataset))
-    dataset_train, dataset_val = torch.utils.data.random_split(dataset, [split, len(dataset)-split])
-
-    # Train model
-    model = train(
-        model, dataset_train, dataset_val, 'model.pth', 
-        autoencoder=True, mae=True,
-        verbose=True, plot=True,
-    )
-
-    # Done
-    print('Done.')
