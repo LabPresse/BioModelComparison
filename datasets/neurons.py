@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 
 # Create a fluorescent neurons datset class
 class NeuronsDataset(Dataset):
-    def __init__(self, crop=(200, 200), scale=1):
+    def __init__(self, crop=None, scale=1):
         super(NeuronsDataset, self).__init__()
 
         # Set up attributes
@@ -73,7 +73,7 @@ class NeuronsDataset(Dataset):
 if __name__ == "__main__":
 
     # Create a dataset object
-    dataset = NeuronsDataset(crop=None)
+    dataset = NeuronsDataset()
 
     # Set up a figure
     import matplotlib.pyplot as plt
@@ -86,6 +86,7 @@ if __name__ == "__main__":
 
         # Get item
         image, mask = dataset[i]
+        print(image.shape, mask.shape)
 
         # Show
         ax[0].cla()

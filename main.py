@@ -11,11 +11,13 @@ from helper_functions import plot_images, count_parameters, check_gradient
 from models.unet import UNet
 from models.vit import VisionTransformer
 from models.conv import ConvolutionalNet
-# from models.vae import VariationalAutoencoder
 # from models.resnet import ResNet
-from training import train_model
-# from datasets.bdellovibrio import BdellovibrioDataset
+from datasets.bdello import BdelloDataset
 from datasets.retinas import RetinaDataset
+from datasets.neurons import NeuronsDataset
+from training import train_model
+from testing import evaluate_model
+
 
 # Set environment
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -37,12 +39,16 @@ def run_training_scheme(
         pretrainargs = {}
 
     # Get dataset
-    if dataID == 'bdellovibrio':
-        dataset = BdellovibrioDataset(image_shape=(img_size, img_size))
+    if dataID == 'bdello':
+        dataset = BdelloDataset(crop=(img_size, img_size))
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'retinas':
+        dataset = RetinaDataset(crop=(img_size, img_size))
         in_channels = 3
         out_channels = 2
-    elif dataID == 'retina_FIVES':
-        dataset = RetinaDataset(crop=(img_size, img_size))
+    elif dataID == 'neurons':
+        dataset = NeuronsDataset(crop=(img_size, img_size))
         in_channels = 3
         out_channels = 2
         
@@ -88,7 +94,7 @@ def run_training_scheme(
             model, datasets, os.path.join(outpath, f'{savename}_pretrain.pth'),
             segmentation=False, autoencoder=True,
             verbose=True, plot=True, device=device,
-            # n_epochs=1,  # TESTING
+            n_epochs=1,  # TESTING
             **pretrainargs
         )
 
@@ -105,9 +111,13 @@ def run_training_scheme(
         model, datasets, os.path.join(outpath, f'{savename}.pth'),
         segmentation=True,
         verbose=True, plot=True, device=device,
-        # n_epochs=1,  # TESTING
+        n_epochs=1,  # TESTING
         **trainargs
     )
+
+    # Test model
+    test_metrics = evaluate_model(model, dataset_test)
+    statistics['test_metrics'] = test_metrics
 
     # Save statistics as json
     with open(os.path.join(outpath, f'{savename}.json'), 'w') as f:
@@ -123,7 +133,7 @@ if __name__ == "__main__":
 
     # Select parameters
     modelID = 'vit'
-    dataID = 'retina_FIVES'
+    dataID = 'retinas'
     options = {
         'pretrain': True,
     }

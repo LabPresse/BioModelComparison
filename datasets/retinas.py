@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 
 # Create a Retina vessel datset class
 class RetinaDataset(Dataset):
-    def __init__(self, crop=(256, 256), scale=1):
+    def __init__(self, crop=None, scale=1):
         super(RetinaDataset, self).__init__()
 
         # Set up attributes
@@ -18,7 +18,6 @@ class RetinaDataset(Dataset):
         self.scale = scale
         self.base_shape = (2048, 2048)
 
-        # Calculate constants
         # Calculate constants
         if crop is None:
             self.crops_per_image = 1
@@ -43,7 +42,7 @@ class RetinaDataset(Dataset):
 
         # Get image amd mask
         file = self.files[file_id]
-        image = Image.open(os.path.join(self.root, file))
+        image = Image.open(os.path.join(self.root, 'images', file))
         image = transforms.ToTensor()(image)
         mask = Image.open(os.path.join(self.root, 'masks', file))
         mask = transforms.ToTensor()(mask)

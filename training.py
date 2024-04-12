@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 
 # Import local modules
 from helper_functions import plot_images
+from testing import evaluate_model
 
 
 # Define training function
@@ -34,10 +35,10 @@ def train_model(model, datasets, savepath,
     epoch_times = []
 
     # Set up data loaders
-    dataset_train, dataset_val, dataset_test = datasets
+    dataset_train, dataset_val, _ = datasets
     dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
     dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
-    dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
+    # dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
 
     # Set up model and optimizer
     model = model.to(device)
@@ -152,23 +153,18 @@ def train_model(model, datasets, savepath,
     # Load best model
     model.load_state_dict(torch.load(savepath))
 
-    # Test model
-    if verbose:
-        print('Testing model.')
-    total_test_loss = 0
-    for i, batch in enumerate(dataloader_test):
-        if verbose and ((i % 10 == 0) or len(dataloader_test) < 20):
-            print(f'--Test Batch {i+1}/{len(dataloader_test)}')
-        loss = calculate_loss(model, batch)
-        total_test_loss += loss.item()
+    # # Test model
+    # if verbose:
+    #     print('Testing model.')
+    # test_metrics = evaluate_model(model, dataloader_test)
 
     # Finalize training stats
     statistics = {
         'train_losses': train_losses,
         'val_losses': val_losses,
         'min_val_loss': min_val_loss,
-        'test_loss': total_test_loss,
         'epoch_times': epoch_times,
+        # 'test_metrics': test_metrics
     }
     
     # Return model

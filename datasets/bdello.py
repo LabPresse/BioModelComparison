@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 
 # Create a Bdellobibrio datset class
 class BdelloDataset(Dataset):
-    def __init__(self, crop=(256, 256), scale=1):
+    def __init__(self, crop=None, scale=1):
         super(BdelloDataset, self).__init__()
 
         # Set up attributes
