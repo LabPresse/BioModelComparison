@@ -148,10 +148,10 @@ def get_neurons_dataset():
 ### Download datasets ###
 if __name__ == "__main__":
 
-    # # Download datasets
-    # get_retina_dataset
-    # get_bdello_datset()
-    # get_neurons_dataset()
+    # Download datasets
+    get_retina_dataset()
+    get_bdello_datset()
+    get_neurons_dataset()
 
     # Done
     print('All datasets downloaded successfully.')
