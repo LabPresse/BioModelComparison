@@ -15,7 +15,7 @@ from models.conv import ConvolutionalNet
 # from models.resnet import ResNet
 from training import train_model
 # from datasets.bdellovibrio import BdellovibrioDataset
-from datasets.retina_FIVES import RetinaDatasetFives
+from datasets.retinas import RetinaDataset
 
 # Set environment
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -42,7 +42,7 @@ def run_training_scheme(
         in_channels = 3
         out_channels = 2
     elif dataID == 'retina_FIVES':
-        dataset = RetinaDatasetFives(crop=(img_size, img_size))
+        dataset = RetinaDataset(crop=(img_size, img_size))
         in_channels = 3
         out_channels = 2
         

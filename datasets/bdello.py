@@ -19,7 +19,10 @@ class BdelloDataset(Dataset):
         self.base_shape = (1024, 1024)
 
         # Calculate constants
-        self.crops_per_image = (self.base_shape[0] // crop[0]) * (self.base_shape[1] // crop[1])
+        if crop is None:
+            self.crops_per_image = 1
+        else:
+            self.crops_per_image = (self.base_shape[0] // crop[0]) * (self.base_shape[1] // crop[1])
 
         # Set up root directory
         self.root = os.path.join('data/bdello')

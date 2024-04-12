@@ -8,21 +8,24 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 
-# Create a Retina vessel datset class
-class RetinaDatasetFives(Dataset):
-    def __init__(self, crop=(256, 256), scale=1):
-        super(RetinaDatasetFives, self).__init__()
+# Create a fluorescent neurons datset class
+class NeuronsDataset(Dataset):
+    def __init__(self, crop=(200, 200), scale=1):
+        super(NeuronsDataset, self).__init__()
 
         # Set up attributes
         self.crop = crop
         self.scale = scale
-        self.base_shape = (2048, 2048)
+        self.base_shape = (1600, 1200)
 
         # Calculate constants
-        self.crops_per_image = (self.base_shape[0] // crop[0]) * (self.base_shape[1] // crop[1])
+        if crop is None:
+            self.crops_per_image = 1
+        else:
+            self.crops_per_image = (self.base_shape[0] // crop[0]) * (self.base_shape[1] // crop[1])
 
         # Set up root directory
-        self.root = os.path.join('data/retinas_FIVES')
+        self.root = os.path.join('data/neurons')
 
         # Get files
         self.files = os.listdir(os.path.join(self.root, 'images'))
@@ -39,13 +42,13 @@ class RetinaDatasetFives(Dataset):
 
         # Get image amd mask
         file = self.files[file_id]
-        image = Image.open(os.path.join(self.root, file))
+        image = Image.open(os.path.join(self.root, 'images', file))
         image = transforms.ToTensor()(image)
         mask = Image.open(os.path.join(self.root, 'masks', file))
         mask = transforms.ToTensor()(mask)
 
         # Configure mask
-        mask = mask[0, :, :] > 0.5
+        mask = mask[0, :, :] != 0
         mask = mask.long()
 
         # Scale
@@ -70,7 +73,7 @@ class RetinaDatasetFives(Dataset):
 if __name__ == "__main__":
 
     # Create a dataset object
-    dataset = RetinaDatasetFives()
+    dataset = NeuronsDataset(crop=None)
 
     # Set up a figure
     import matplotlib.pyplot as plt
