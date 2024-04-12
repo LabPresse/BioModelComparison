@@ -1,6 +1,7 @@
 
 # Import libraries
 import os
+import json
 import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset, random_split
@@ -18,12 +19,13 @@ from datasets.retina_FIVES import RetinaDatasetFives
 
 # Set environment
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+outpath = 'outfiles'
 
 
 # Define training scheme function
 def run_training_scheme(
-        modelID, dataID, 
-        ffcvID=0, img_size=128, pretrain_ae=False, 
+        modelID, dataID, savename,
+        ffcvID=0, img_size=128, pretrain=False, 
         trainargs=None, pretrainargs=None, **modelargs
     ):
     """Run a training scheme on a model and dataset with given options."""
@@ -38,11 +40,11 @@ def run_training_scheme(
     if dataID == 'bdellovibrio':
         dataset = BdellovibrioDataset(image_shape=(img_size, img_size))
         in_channels = 3
-        out_channels = 1
+        out_channels = 2
     elif dataID == 'retina_FIVES':
         dataset = RetinaDatasetFives(crop=(img_size, img_size))
         in_channels = 3
-        out_channels = 1
+        out_channels = 2
         
     # Get 5-fold cross-validation split from ffcvID
     splits = random_split(dataset, [len(dataset) // 5] * 5)
@@ -52,6 +54,7 @@ def run_training_scheme(
     dataset_test = Subset(dataset, indices=splits[testID].indices)
     dataset_val = Subset(dataset, indices=splits[valID].indices)
     dataset_train = Subset(dataset, indices=[idx for i in trainIDs for idx in splits[i].indices])
+    datasets = (dataset_train, dataset_val, dataset_test)
 
     # Get model
     if modelID == 'vit':
@@ -76,23 +79,39 @@ def run_training_scheme(
         )
 
     # Pretrain as autoencoder if necessary
-    if pretrain_ae:
+    if pretrain:
+        # Modify output layer
         model.set_output_layer(in_channels)
-        model = train_model(
-            model, dataset_train, dataset_val, 'outfiles/model_ae.pth', 
+
+        # Pretrain model
+        model, statistics = train_model(
+            model, datasets, os.path.join(outpath, f'{savename}_pretrain.pth'),
             segmentation=False, autoencoder=True,
             verbose=True, plot=True, device=device,
+            # n_epochs=1,  # TESTING
             **pretrainargs
         )
-        model.reset_output_layer(out_channels)
+
+        # Save statistics as json
+        with open(os.path.join(outpath, f'{savename}_pretrain.json'), 'w') as f:
+            json.dump(statistics, f)
+
+        # Modify output layer back
+        model.set_output_layer(out_channels)
+        
 
     # Train model
-    model = train_model(
-        model, dataset_train, dataset_val, 'outfiles/model.pth', 
+    model, statistics = train_model(
+        model, datasets, os.path.join(outpath, f'{savename}.pth'),
         segmentation=True,
         verbose=True, plot=True, device=device,
+        # n_epochs=1,  # TESTING
         **trainargs
     )
+
+    # Save statistics as json
+    with open(os.path.join(outpath, f'{savename}.json'), 'w') as f:
+        json.dump(statistics, f)
 
     # Done
     print('Done.')
@@ -101,7 +120,22 @@ def run_training_scheme(
 
 # Run training scheme
 if __name__ == "__main__":
-    run_training_scheme(
-        'vit', 'retina_FIVES', pretrain_ae=True,
-    )
+
+    # Select parameters
+    modelID = 'vit'
+    dataID = 'retina_FIVES'
+    options = {
+        'pretrain': True,
+    }
+
+    # Configure savename
+    savename = f'{modelID}_{dataID}'
+    for key, value in options.items():
+        savename += f'_{key}={value}'
+
+    # Run training scheme
+    run_training_scheme(modelID, dataID, savename, **options)
+
+    # Done
+    print('Done.')
 

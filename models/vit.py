@@ -89,6 +89,17 @@ class VisionTransformer(nn.Module):
         # Patch expansion
         self.set_output_layer(out_channels)
 
+    def set_output_layer(self, n_channels):
+        """Set the output layer to have the given number of channels."""
+        self.patch_expansion = nn.Sequential(
+            nn.ConvTranspose2d(
+                self.n_features, 
+                n_channels, 
+                kernel_size=self.patch_size, 
+                stride=self.patch_size,
+            ),
+        )
+    
     def forward(self, x):
         """Forward pass."""
 
@@ -119,17 +130,6 @@ class VisionTransformer(nn.Module):
 
         # Return
         return x
-    
-    def set_output_layer(self, n_channels):
-        """Reset the output layer to have the given number of channels."""
-        self.patch_expansion = nn.Sequential(
-            nn.ConvTranspose2d(
-                self.n_features, 
-                n_channels, 
-                kernel_size=self.patch_size, 
-                stride=self.patch_size,
-            ),
-        )
     
     # Create mask
     def create_mask(self, B, p=.5):

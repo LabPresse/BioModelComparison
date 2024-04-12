@@ -15,15 +15,12 @@ class RetinaRFMiDDataset(Dataset):
         super(RetinaRFMiDDataset, self).__init__()
 
         # Set up attributes
-        self.img_size = crop[0]
-        self.img_channels = 3
-        self.target_channels = 3
         self.crop = crop
         self.scale = scale
         self.base_shape = (2048, 2048)
 
-        # # Calculate constants
-        # self.crops_per_image = (self.base_shape[0] // crop[0]) * (self.base_shape[1] // crop[1])
+        # Calculate constants
+        self.crops_per_image = (self.base_shape[0] // crop[0]) * (self.base_shape[1] // crop[1])
 
         # Set up root directory
         self.root = os.path.join('data/retinas_RFMiD_cleaned')
@@ -33,19 +30,16 @@ class RetinaRFMiDDataset(Dataset):
         self.files = [f for f in self.files if f.endswith('.png')]
 
     def __len__(self):
-        # return len(self.files) * self.crops_per_image
-        return len(self.files)
+        return len(self.files) * self.crops_per_image
     
     def __getitem__(self, idx):
 
-        # # Get file ID and crop ID
-        # file_id = idx // self.crops_per_image
-        # crop_id = idx % self.crops_per_image
-
-        # Get file
-        file = self.files[idx]
+        # Get file ID and crop ID
+        file_id = idx // self.crops_per_image
+        crop_id = idx % self.crops_per_image
 
         # Get image
+        file = self.files[file_id]
         image = Image.open(os.path.join(self.root, file))
         image = transforms.ToTensor()(image)
 
@@ -57,12 +51,9 @@ class RetinaRFMiDDataset(Dataset):
         crop = self.crop
         img_shape = image.shape[1:]
         if crop is not None:
-            # row = crop_id // (base_shape[1] // crop[1])
-            # col = crop_id % (base_shape[1] // crop[1])
-            # image = image[:, row*crop[0]:(row+crop[0]), col*crop[1]:(col+1)*crop[1]]
-            row = torch.randint(0, img_shape[0] - crop[0], (1,)).item()
-            col = torch.randint(0, img_shape[1] - crop[1], (1,)).item()
-            image = image[:, row:row+crop[0], col:col+crop[1]]
+            row = crop_id // (img_shape[1] // crop[1])
+            col = crop_id % (img_shape[1] // crop[1])
+            image = image[:, row*crop[0]:(row+1)*crop[0], col*crop[1]:(col+1)*crop[1]]
 
         # Return
         return image

@@ -12,9 +12,9 @@ from helper_functions import plot_images
 
 
 # Define training function
-def train_model(model, dataset_train, dataset_val, savepath,
+def train_model(model, datasets, savepath,
     segmentation=False, autoencoder=False, mae=False,
-    batch_size=32, n_epochs=100, lr=1e-3,
+    batch_size=32, n_epochs=1000, lr=1e-3,
     verbose=True, plot=True, device=torch.device('cpu'),
     ):
 
@@ -23,6 +23,10 @@ def train_model(model, dataset_train, dataset_val, savepath,
         status = f'Training model with {sum(p.numel() for p in model.parameters())} parameters.'
         print(status)
 
+    # Check inputs
+    if not (segmentation or autoencoder):
+        raise ValueError('Must specify either segmentation or autoencoder.')
+
     # Track training stats
     train_losses = []
     val_losses = []
@@ -30,8 +34,10 @@ def train_model(model, dataset_train, dataset_val, savepath,
     epoch_times = []
 
     # Set up data loaders
+    dataset_train, dataset_val, dataset_test = datasets
     dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
     dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
+    dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
 
     # Set up model and optimizer
     model = model.to(device)
@@ -146,11 +152,22 @@ def train_model(model, dataset_train, dataset_val, savepath,
     # Load best model
     model.load_state_dict(torch.load(savepath))
 
+    # Test model
+    if verbose:
+        print('Testing model.')
+    total_test_loss = 0
+    for i, batch in enumerate(dataloader_test):
+        if verbose and ((i % 10 == 0) or len(dataloader_test) < 20):
+            print(f'--Test Batch {i+1}/{len(dataloader_test)}')
+        loss = calculate_loss(model, batch)
+        total_test_loss += loss.item()
+
     # Finalize training stats
     statistics = {
         'train_losses': train_losses,
         'val_losses': val_losses,
         'min_val_loss': min_val_loss,
+        'test_loss': total_test_loss,
         'epoch_times': epoch_times,
     }
     

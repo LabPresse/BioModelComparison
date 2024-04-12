@@ -93,8 +93,12 @@ class UNet(nn.Module):
             self.decoder_blocks.append(nn.Sequential(*layers))
 
         # Set up output block
+        self.set_output_layer(out_channels)
+
+    def set_output_layer(self, out_channels):
+        """Set the output layer to have the given number of channels."""
         self.output_block = nn.Sequential(
-            nn.Conv2d(n_features, out_channels, kernel_size=1),
+            nn.Conv2d(self.n_features, out_channels, kernel_size=1),
         )
 
     def forward(self, x):
