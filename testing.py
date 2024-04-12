@@ -2,12 +2,21 @@
 # Import libraries
 import torch
 import numpy as np
+from torch.utils.data import DataLoader
 from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score
+
+# Import local modules
+from helper_functions import plot_roc_curve
 
 
 # Define a function to evaluate a PyTorch model
-def evaluate_model(model, dataloader):
+def evaluate_model(model, dataset, verbose=True, plot=False):
     """Evaluate a PyTorch model on a dataset."""
+
+    # Print status
+    if verbose:
+        status = f'Evaluating model with {sum(p.numel() for p in model.parameters())} parameters.'
+        print(status)
 
     # Set the device
     device = next(model.parameters()).device
@@ -15,12 +24,20 @@ def evaluate_model(model, dataloader):
     # Set the model to evaluation mode
     model.eval()
 
+
+    ### EVALUATE THE MODEL ###
+    if verbose:
+        print(f'Looping over the test datset.')
+
     # Lists to store true labels and predicted probabilities
     true_labels = []
     predicted_probs = []
 
     # Iterate over the dataloader
-    for x, y in dataloader:
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+    for i, (x, y) in enumerate(dataloader):
+        if verbose:
+            print(f'--Batch {i + 1}/{len(dataloader)}')
 
         # Move the data to the device
         x = x.to(device)
@@ -38,20 +55,44 @@ def evaluate_model(model, dataloader):
     true_labels = np.array(true_labels)
     predicted_probs = np.array(predicted_probs)
 
-    # Calculate the predicted labels based on the predicted probabilities
-    predicted_labels = np.argmax(predicted_probs, axis=1)
+
+    ### CALCULATE EVALUATION METRICS ###
+    if verbose:
+        print('Calculating evaluation metrics.')
 
     # Calculate the confusion matrix
-    tn, fp, fn, tp = confusion_matrix(true_labels, predicted_labels).ravel()
+    predicted_labels = np.argmax(predicted_probs, axis=1)
+    tn, fp, fn, tp = confusion_matrix(
+        true_labels.reshape(-1), 
+        predicted_labels.reshape(-1)
+    ).ravel()
 
     # Calculate sensitivity, specificity, and accuracy
     sensitivity = tp / (tp + fn)
     specificity = tn / (tn + fp)
     accuracy = (tp + tn) / (tp + tn + fp + fn)
 
+
+    ### CALCULATE ROC CURVE AND AUC SCORE ###
+    if verbose:
+        print('Calculating ROC curve and AUC score.')
+
     # Calculate the ROC curve and AUC score
-    roc_fpr, roc_tpr, roc_thresholds = roc_curve(true_labels, predicted_probs[:, 1])
-    auc_score = roc_auc_score(true_labels, predicted_probs[:, 1])
+    roc_fpr, roc_tpr, roc_thresholds = roc_curve(
+        true_labels.reshape(-1),
+        predicted_probs[:, 1].reshape(-1),
+    )
+    auc_score = roc_auc_score(
+        true_labels.reshape(-1),
+        predicted_probs[:, 1].reshape(-1),
+    )
+
+    # Plot the ROC curve
+    if plot:
+        plot_roc_curve(roc_fpr, roc_tpr, auc_score)
+
+
+    ### PACKAGE THE METRICS ###
 
     # Package the metrics in a dictionary
     metrics = {
@@ -66,3 +107,5 @@ def evaluate_model(model, dataloader):
 
     # Return the evaluation metrics
     return metrics
+
+

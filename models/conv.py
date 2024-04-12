@@ -46,31 +46,23 @@ class ConvolutionalNet(nn.Module):
             self.layers.append(nn.Sequential(*layers))
 
         # Set up output block
+        self.set_output_layer(out_channels)
+
+    def set_output_layer(self, out_channels):
+        """Set the output layer to have the given number of channels."""
         self.output_block = nn.Sequential(
-            nn.Conv2d(n_features, out_channels, kernel_size=1),
+            nn.Conv2d(self.n_features, out_channels, kernel_size=1),
         )
 
     def forward(self, x):
-            
-        # Initialize
-        skips = []
+        """Forward pass."""
 
         # Input block
         x = self.input_block(x)
 
-        # Encoder blocks
-        for block in self.encoder_blocks:
-            x = block(x)
-            skips.append(x)
-
-        # Decoder blocks
-        for i, block in enumerate(self.decoder_blocks):
-            if i == 0:
-                skips.pop()
-                x = block(x)
-            else:
-                x = torch.cat([x, skips.pop()], dim=1)
-                x = block(x)
+        # Layers
+        for layer in self.layers:
+            x = layer(x)
 
         # Output block
         x = self.output_block(x)

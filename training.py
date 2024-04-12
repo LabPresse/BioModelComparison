@@ -14,19 +14,22 @@ from testing import evaluate_model
 
 # Define training function
 def train_model(model, datasets, savepath,
-    segmentation=False, autoencoder=False, mae=False,
-    batch_size=32, n_epochs=1000, lr=1e-3,
-    verbose=True, plot=True, device=torch.device('cpu'),
+    segmentation=False, autoencoder=False, mae=False, dae=False,
+    batch_size=32, n_epochs=100, lr=1e-3,
+    verbose=True, plot=True
     ):
+
+    # Check inputs
+    if not (segmentation or autoencoder):
+        raise ValueError('Must specify either segmentation or autoencoder.')
 
     # Print status
     if verbose:
         status = f'Training model with {sum(p.numel() for p in model.parameters())} parameters.'
         print(status)
 
-    # Check inputs
-    if not (segmentation or autoencoder):
-        raise ValueError('Must specify either segmentation or autoencoder.')
+    # Set up environment
+    device = next(model.parameters()).device
 
     # Track training stats
     train_losses = []
@@ -36,12 +39,10 @@ def train_model(model, datasets, savepath,
 
     # Set up data loaders
     dataset_train, dataset_val, _ = datasets
-    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
-    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
-    # dataloader_test = DataLoader(dataset_test, batch_size=batch_size, shuffle=False)
+    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=4)
+    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False, num_workers=4)
 
-    # Set up model and optimizer
-    model = model.to(device)
+    # Set up optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     max_grad_norm = 1
 
@@ -51,30 +52,24 @@ def train_model(model, datasets, savepath,
     elif autoencoder:
         loss_function = torch.nn.MSELoss()
 
-    # Define calculate loss function
-    def calculate_loss(model, batch):
-            
-        # Extract data
+    # Define extract batch function
+    def extract_batch(batch):
         if segmentation:
             x, y = batch
-            x = x.to(device).float()
-            y = y.to(device).long()
+            x = x.float()
+            y = y.long()
         elif autoencoder:
             x, _ = batch
             x = x.to(device).float()
             y = x.clone()
+            if dae:
+                x = x + .1 * torch.randn_like(x)
             if mae:
-                mask = model.create_mask(x.shape[0]).to(device)
+                mask = model.create_mask(x.shape[0])
                 x = x * mask
-
-        # Forward pass
-        output = model(x)
-
-        # Calculate loss
-        loss = loss_function(output, y)
-
-        # Return loss
-        return loss
+        x = x.to(device)
+        y = y.to(device)
+        return x, y
 
     # Train model
     for epoch in range(n_epochs):
@@ -94,7 +89,9 @@ def train_model(model, datasets, savepath,
             optimizer.zero_grad()
 
             # Calculate loss
-            loss = calculate_loss(model, batch)
+            x, y = extract_batch(batch)
+            output = model(x)
+            loss = loss_function(output, y)
 
             # Backward pass
             loss.backward()
@@ -112,7 +109,9 @@ def train_model(model, datasets, savepath,
         for i, batch in enumerate(dataloader_val):
             if verbose and ((i % 10 == 0) or len(dataloader_val) < 20):
                 print(f'--Val Batch {i+1}/{len(dataloader_val)}')
-            loss = calculate_loss(model, batch)
+            x, y = extract_batch(batch)
+            output = model(x)
+            loss = loss_function(output, y)
             total_val_loss += loss.item()
     
         # Save model if validation loss is lower
@@ -136,27 +135,15 @@ def train_model(model, datasets, savepath,
         
         # Plot images
         if plot:
-            x, y = next(iter(dataloader_val))
-            x = x.to(device).float()
-            y = y.to(device).long()
+            x, y = extract_batch(next(iter(dataloader_train)))
+            z = model(x)
             if segmentation:
                 z = model(x).argmax(dim=1)
-            elif autoencoder:
-                y = x.clone()
-                if mae:
-                    mask = model.create_mask(x.shape[0]).to(device)
-                    x = x * mask
-                z = model(x)
             plot_images(Images=x[:5], Predictions=z[:5], Targets=y[:5])
             plt.pause(1)
 
     # Load best model
     model.load_state_dict(torch.load(savepath))
-
-    # # Test model
-    # if verbose:
-    #     print('Testing model.')
-    # test_metrics = evaluate_model(model, dataloader_test)
 
     # Finalize training stats
     statistics = {
@@ -164,7 +151,6 @@ def train_model(model, datasets, savepath,
         'val_losses': val_losses,
         'min_val_loss': min_val_loss,
         'epoch_times': epoch_times,
-        # 'test_metrics': test_metrics
     }
     
     # Return model

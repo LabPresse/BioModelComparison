@@ -121,7 +121,7 @@ def check_tensor(x, verbose=False):
     return max_x, min_x, mean_x
 
 
-# Define plotting function
+# Plot tensors function
 @torch.no_grad()
 def plot_images(images=None, col_labels=None, **image_dict):
 
@@ -198,3 +198,33 @@ def plot_images(images=None, col_labels=None, **image_dict):
     return
 
 
+# Plor ROC curve function
+def plot_roc_curve(fpr, tpr, auc_score=None):
+    """Plot the ROC curve with the AUC score."""
+    
+    # Set up figure
+    fig, ax = plt.subplots(1, 1)
+    fig.set_size_inches(6, 6)
+    plt.ion()
+    plt.show()
+
+    # Set up label
+    if auc_score is not None:
+        auc_score = round(auc_score, 2)
+        label = f'ROC curve (AUC = {auc_score})'
+    else:
+        label = 'ROC curve'
+
+    # Plot ROC curve
+    ax.plot([0, 1], [0, 1], color='gray', linestyle='--', label='Random')
+    ax.plot(fpr, tpr, color='blue', label=label)
+
+    # Set up plot
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.set_title('Receiver Operating Characteristic (ROC) Curve')
+    ax.legend()
+    plt.pause(.1)
+    
+    # Return
+    return

@@ -27,7 +27,8 @@ outpath = 'outfiles'
 # Define training scheme function
 def run_training_scheme(
         modelID, dataID, savename,
-        ffcvID=0, img_size=128, pretrain=False, 
+        ffcvID=0, img_size=128, pretrain=False, max_samples=None,
+        verbose=True, plot=False,
         trainargs=None, pretrainargs=None, **modelargs
     ):
     """Run a training scheme on a model and dataset with given options."""
@@ -51,6 +52,10 @@ def run_training_scheme(
         dataset = NeuronsDataset(crop=(img_size, img_size))
         in_channels = 3
         out_channels = 2
+
+    # Limit dataset size for testing
+    if max_samples is not None:
+        dataset = Subset(dataset, indices=torch.randperm(len(dataset))[:max_samples])
         
     # Get 5-fold cross-validation split from ffcvID
     splits = random_split(dataset, [len(dataset) // 5] * 5)
@@ -63,26 +68,29 @@ def run_training_scheme(
     datasets = (dataset_train, dataset_val, dataset_test)
 
     # Get model
-    if modelID == 'vit':
-        model = VisionTransformer(
-            img_size=img_size, 
+    if modelID == 'conv':
+        model = ConvolutionalNet(
             in_channels=in_channels, 
             out_channels=out_channels,
             **modelargs
         )
-        pretrainargs['mae'] = True
+        pretrainargs['dae'] = True  # Denoising autoencoder
     elif modelID == 'unet':
         model = UNet(
             in_channels=in_channels, 
             out_channels=out_channels,
             **modelargs
         )
-    elif modelID == 'conv':
-        model = ConvolutionalNet(
+        pretrainargs['dae'] = True  # Denoising autoencoder
+    elif modelID == 'vit':
+        model = VisionTransformer(
+            img_size=img_size, 
             in_channels=in_channels, 
             out_channels=out_channels,
             **modelargs
         )
+        pretrainargs['mae'] = True  # Masked autoencoder
+    model = model.to(device)
 
     # Pretrain as autoencoder if necessary
     if pretrain:
@@ -93,8 +101,7 @@ def run_training_scheme(
         model, statistics = train_model(
             model, datasets, os.path.join(outpath, f'{savename}_pretrain.pth'),
             segmentation=False, autoencoder=True,
-            verbose=True, plot=True, device=device,
-            n_epochs=1,  # TESTING
+            verbose=verbose, plot=plot,
             **pretrainargs
         )
 
@@ -110,13 +117,12 @@ def run_training_scheme(
     model, statistics = train_model(
         model, datasets, os.path.join(outpath, f'{savename}.pth'),
         segmentation=True,
-        verbose=True, plot=True, device=device,
-        n_epochs=1,  # TESTING
+        verbose=verbose, plot=plot,
         **trainargs
     )
 
     # Test model
-    test_metrics = evaluate_model(model, dataset_test)
+    test_metrics = evaluate_model(model, dataset_test, verbose=verbose, plot=plot)
     statistics['test_metrics'] = test_metrics
 
     # Save statistics as json
@@ -132,7 +138,7 @@ def run_training_scheme(
 if __name__ == "__main__":
 
     # Select parameters
-    modelID = 'vit'
+    modelID = 'conv'
     dataID = 'retinas'
     options = {
         'pretrain': True,
@@ -144,7 +150,15 @@ if __name__ == "__main__":
         savename += f'_{key}={value}'
 
     # Run training scheme
-    run_training_scheme(modelID, dataID, savename, **options)
+    run_training_scheme(
+        modelID, 
+        dataID, 
+        savename,
+        max_samples=10000,  # TODO: Remove
+        verbose=True,  # TODO: Remove
+        plot=True,  # TODO: Remove
+        **options
+    )
 
     # Done
     print('Done.')
