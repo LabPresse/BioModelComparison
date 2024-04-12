@@ -20,7 +20,7 @@ def get_retina_dataset():
 
     # Set paths
     url = 'https://figshare.com/ndownloader/files/34969398'
-    path_data = os.path.join(root, 'retinas_FIVES')
+    path_data = os.path.join(root, 'retinas')
     path_data_images = os.path.join(path_data, 'images')
     path_data_masks = os.path.join(path_data, 'masks')
     download_path = os.path.join(path_data, 'FIVES.rar')
@@ -70,7 +70,7 @@ def get_retina_dataset():
     shutil.rmtree(default_path)
     
     # Done
-    print('Finished downloading retina dataset FIVES')
+    print('Finished downloading retina dataset')
     return
 
 
