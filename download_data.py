@@ -227,12 +227,52 @@ def get_bdello_datset():
     return
 
 
-# Download datasets
-# get_retina_dataset_RFMiD()
-# get_retina_dataset_FIVES()
-# get_bdello_datset()
+# Get fluorescent neurons dataset
+def get_neurons_dataset():
 
-# Done
-print('All datasets downloaded successfully.')
+    # Set paths
+    path_data = os.path.join(root, 'neurons')
+    
+    # Download the dataset
+    api.dataset_download_files(
+        'nbroad/fluorescent-neuronal-cells',
+        path=path_data,
+        unzip=True,
+    )
+
+    # Move images to base directory
+    oldpath = os.path.join(path_data, 'all_images', 'images')
+    newpath = os.path.join(path_data, 'images')
+    files = [f for f in os.listdir(oldpath) if f.lower().endswith('.png')]
+    for file in files:
+        os.rename(os.path.join(oldpath, file), os.path.join(newpath, file))
+
+    # Move masks to base directory
+    oldpath = os.path.join(path_data, 'all_masks', 'masks')
+    newpath = os.path.join(path_data, 'masks')
+    files = [f for f in os.listdir(oldpath) if f.lower().endswith('.png')]
+    for file in files:
+        os.rename(os.path.join(oldpath, file), os.path.join(newpath, file))
+
+    # Remove old directories
+    shutil.rmtree(os.path.join(path_data, 'all_images'))
+    shutil.rmtree(os.path.join(path_data, 'all_masks'))
+
+    # Done
+    print('Finished downloading fluorescent neurons dataset')
+    return
+
+
+### Download datasets ###
+if __name__ == "__main__":
+
+    # # Download datasets
+    # get_retina_dataset_RFMiD()
+    # get_retina_dataset_FIVES()
+    # get_bdello_datset()
+    # get_neurons_dataset()
+
+    # Done
+    print('All datasets downloaded successfully.')
 
 
