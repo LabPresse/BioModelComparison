@@ -1,6 +1,6 @@
 # BioModelComparison
 
-This project compares the effectivenss of deep learning architectures and training protocols on various biological datasets.
+This project compares the effectiveness of deep learning architectures and training protocols on various biological datasets.
 
 ## Setting up the environment
 
