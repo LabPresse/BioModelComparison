@@ -12,12 +12,9 @@ printf "#!/bin/bash
 
 #SBATCH -D /home/jsbryan4/BioModelComparison/
 #SBATCH -p spressecpu
-#SBATCH -q spresse
 #SBATCH -t 7-00:00:00
 #SBATCH -o job$i.out
 #SBATCH -e job$i.err
-#SBATCH -N 1
-#SBATCH -c 1
 
 module load anaconda/py3
 source .env/bin/activate
