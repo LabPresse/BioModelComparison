@@ -18,8 +18,8 @@ printf "#!/bin/bash
 #SBATCH -c 1
 #SBATCH -N 1 
 
-module load mamba/latest
-source .env/bin/activate
+module load mamba
+source activate myenv
 
 stdbuf -oL python main.py $i
 
