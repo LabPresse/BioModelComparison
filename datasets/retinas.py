@@ -22,7 +22,10 @@ class RetinaDataset(Dataset):
         if crop is None:
             self.crops_per_image = 1
         else:
-            self.crops_per_image = (self.base_shape[0] // crop[0]) * (self.base_shape[1] // crop[1])
+            self.crops_per_image = (
+                (self.base_shape[0] // scale // crop[0])
+                * (self.base_shape[1] // scale // crop[1])  
+            )
 
         # Set up root directory
         self.root = os.path.join('data/retinas')

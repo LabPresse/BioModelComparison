@@ -1,13 +1,14 @@
 
 # Import libraries
 import os
+import sys
 import json
 import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset, random_split
 
 # Import local modules
-from helper_functions import plot_images, count_parameters, check_gradient
+from helper_functions import plot_images, count_parameters, check_gradient, convert_to_serializable
 from models.unet import UNet
 from models.vit import VisionTransformer
 from models.conv import ConvolutionalNet
@@ -27,11 +28,15 @@ outpath = 'outfiles'
 # Define training scheme function
 def run_training_scheme(
         modelID, dataID, savename,
-        ffcvID=0, img_size=128, pretrain=False, max_samples=None,
+        ffcvID=0, img_size=256, pretrain=False, n_epochs=50, max_samples=None,
         verbose=True, plot=False,
         trainargs=None, pretrainargs=None, **modelargs
     ):
     """Run a training scheme on a model and dataset with given options."""
+
+    # Print status
+    if verbose:
+        print(f'Starting training scheme: {savename}')
 
     # Set up inputs
     if trainargs is None:
@@ -41,15 +46,15 @@ def run_training_scheme(
 
     # Get dataset
     if dataID == 'bdello':
-        dataset = BdelloDataset(crop=(img_size, img_size))
+        dataset = BdelloDataset(crop=(img_size, img_size), scale=2)
         in_channels = 1
         out_channels = 2
     elif dataID == 'retinas':
-        dataset = RetinaDataset(crop=(img_size, img_size))
+        dataset = RetinaDataset(crop=(img_size, img_size), scale=2)
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
-        dataset = NeuronsDataset(crop=(img_size, img_size))
+        dataset = NeuronsDataset(crop=(img_size, img_size), scale=2)
         in_channels = 3
         out_channels = 2
 
@@ -58,7 +63,7 @@ def run_training_scheme(
         dataset = Subset(dataset, indices=torch.randperm(len(dataset))[:max_samples])
         
     # Get 5-fold cross-validation split from ffcvID
-    splits = random_split(dataset, [len(dataset) // 5] * 5)
+    splits = random_split(dataset, [len(dataset) // 5] * 4 + [len(dataset) - 4 * (len(dataset) // 5)])
     testID = ffcvID
     valID = (ffcvID + 1) % 5
     trainIDs = [i for i in range(5) if i not in [testID, valID]]
@@ -102,12 +107,13 @@ def run_training_scheme(
             model, datasets, os.path.join(outpath, f'{savename}_pretrain.pth'),
             segmentation=False, autoencoder=True,
             verbose=verbose, plot=plot,
+            n_epochs=n_epochs,
             **pretrainargs
         )
 
         # Save statistics as json
         with open(os.path.join(outpath, f'{savename}_pretrain.json'), 'w') as f:
-            json.dump(statistics, f)
+            json.dump(statistics, f, default=convert_to_serializable)
 
         # Modify output layer back
         model.set_output_layer(out_channels)
@@ -118,6 +124,7 @@ def run_training_scheme(
         model, datasets, os.path.join(outpath, f'{savename}.pth'),
         segmentation=True,
         verbose=verbose, plot=plot,
+        n_epochs=n_epochs,
         **trainargs
     )
 
@@ -127,36 +134,81 @@ def run_training_scheme(
 
     # Save statistics as json
     with open(os.path.join(outpath, f'{savename}.json'), 'w') as f:
-        json.dump(statistics, f)
+        json.dump(statistics, f, default=convert_to_serializable)
 
     # Done
-    print('Done.')
+    if verbose:
+        print('Finished training scheme.')
     return
 
 
 # Run training scheme
 if __name__ == "__main__":
+    
+    # Get job id from sys
+    jobID = 0
+    if len(sys.argv) > 1:
+        jobID = int(sys.argv[1])
+        
+    # Set up datasets, models, and options
+    datasets = ['bdello', 'retinas', 'neurons']
+    model_options = [
+        # ConvolutionalNet: n_layers (8, 16, 32), activation (relu, gelu)
+        ['conv', {'n_layers': 8, 'activation': 'relu'}],
+        ['conv', {'n_layers': 16, 'activation': 'relu'}],
+        ['conv', {'n_layers': 32, 'activation': 'relu'}],
+        ['conv', {'n_layers': 16, 'activation': 'gelu'}],
+        # VisionTransformer: Smaller images: n_layers (8, 16, 32), n_features (32, 64, 128), use_cls_token (True, False)
+        ['vit', {'img_size': 128, 'n_layers': 8, 'n_features': 64}],
+        ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64}],
+        ['vit', {'img_size': 128, 'n_layers': 32, 'n_features': 64}],
+        ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 32}],
+        ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 128}],
+        ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64, 'use_cls_token': False}],
+        # UNet: n_blocks (2, 3, 4), n_layers_per_block (2, 4), expansion (1, 2)
+        ['unet', {'n_blocks': 2, 'n_layers_per_block': 2}],
+        ['unet', {'n_blocks': 3, 'n_layers_per_block': 2}],
+        ['unet', {'n_blocks': 4, 'n_layers_per_block': 2}],
+        ['unet', {'n_blocks': 3, 'n_layers_per_block': 4}],
+        ['unet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 1}],
+        # ResNet: n_layers (8, 16, 32) with bottleneck (True, False)
+        ['resnet', {'n_layers': 8, 'expansion': 1, 'bottleneck': False}],
+        ['resnet', {'n_layers': 16, 'expansion': 1, 'bottleneck': False}],
+        ['resnet', {'n_layers': 32, 'expansion': 1, 'bottleneck': False}],
+        ['resnet', {'n_layers': 8, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_layers': 16, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_layers': 32, 'expansion': 2, 'bottleneck': True}],
+    ]
 
-    # Select parameters
-    modelID = 'conv'
-    dataID = 'retinas'
-    options = {
-        'pretrain': True,
-    }
+    # Set up all jobs
+    all_jobs = []
+    for dataID in datasets:
+        for modelID, options in model_options:
+            for pretrain in [False, True]:
+                for ffcvid in range(5):
+                    all_jobs.append((
+                        modelID, 
+                        dataID, 
+                        {**options, 'pretrain':pretrain}, ffcvid
+                    ))
+    n_jobs = len(all_jobs)
+
+    # Get job parameters
+    modelID, dataID, options, ffcvid = all_jobs[jobID]
 
     # Configure savename
     savename = f'{modelID}_{dataID}'
-    for key, value in options.items():
-        savename += f'_{key}={value}'
+    for key in sorted(list(options.keys())):
+        savename += f'_{key}={options[key]}'
+    savename += f'_ffcv={ffcvid}'
 
     # Run training scheme
     run_training_scheme(
         modelID, 
         dataID, 
         savename,
-        max_samples=10000,  # TODO: Remove
-        verbose=True,  # TODO: Remove
-        plot=True,  # TODO: Remove
+        n_epochs=50,
+        verbose=True,
         **options
     )
 

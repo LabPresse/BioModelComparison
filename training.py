@@ -15,7 +15,7 @@ from testing import evaluate_model
 # Define training function
 def train_model(model, datasets, savepath,
     segmentation=False, autoencoder=False, mae=False, dae=False,
-    batch_size=32, n_epochs=100, lr=1e-3,
+    batch_size=32, n_epochs=50, lr=1e-3, num_workers=0,
     verbose=True, plot=True
     ):
 
@@ -39,12 +39,18 @@ def train_model(model, datasets, savepath,
 
     # Set up data loaders
     dataset_train, dataset_val, _ = datasets
-    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True, num_workers=4)
-    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False, num_workers=4)
+    dataloader_train = DataLoader(
+        dataset_train, 
+        batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+    dataloader_val = DataLoader(
+        dataset_val, 
+        batch_size=batch_size, shuffle=False, num_workers=num_workers
+    )
 
     # Set up optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    max_grad_norm = 1
+    max_grad_norm = 1/lr  # Max parameter update is 1
 
     # Set up criterion
     if segmentation:
@@ -120,8 +126,8 @@ def train_model(model, datasets, savepath,
             torch.save(model.state_dict(), savepath)
 
         # Save training metrics
-        train_losses.append(total_train_loss)
-        val_losses.append(total_val_loss)
+        train_losses.append(total_train_loss / len(dataset_train))
+        val_losses.append(total_val_loss / len(dataset_val))
         epoch_times.append(time.time()-t)
 
         # Print status

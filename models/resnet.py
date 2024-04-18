@@ -3,40 +3,66 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.nn as nn
 
 
 # Define the ResNetBlock class
 class ResNetBlock(nn.Module):
-    def __init__(self, in_features, out_features, stride=1, kernel_size=3):
+    def __init__(self, in_features, out_features, bottleneck=False):
         super(ResNetBlock, self).__init__()
         
         # Set up attributes
         self.in_features = in_features
         self.out_features = out_features
-        self.stride = stride
-
-        # Calculate constant
-        padding = kernel_size // 2
+        self.bottleneck = bottleneck
 
         # Define convolution
-        self.conv = nn.Sequential(
-            nn.Conv2d(
-                in_features, out_features, 
-                kernel_size=kernel_size, stride=stride, padding=padding, bias=False
-            ),
-            nn.GroupNorm(1, out_features),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(
-                out_features, out_features, 
-                kernel_size=kernel_size, stride=1, padding=padding, bias=False
-            ),
-            nn.GroupNorm(1, out_features),
-        )
+        if bottleneck:
+            # Use bottleneck architecture
+            mid_features = out_features // 4
+            self.conv = nn.Sequential(
+                # 1x1 convolution for bottleneck
+                nn.Conv2d(
+                    in_features, mid_features, 
+                    kernel_size=1, bias=False
+                ),
+                nn.InstanceNorm2d(mid_features),
+                nn.ReLU(),
+                # 3x3 convolution for spatial features
+                nn.Conv2d(
+                    mid_features, mid_features, 
+                    kernel_size=3, padding=1, bias=False
+                ),
+                nn.InstanceNorm2d(mid_features),
+                nn.ReLU(),
+                # 1x1 convolution for expansion
+                nn.Conv2d(
+                    mid_features, out_features, 
+                    kernel_size=1, bias=False
+                ),
+                nn.InstanceNorm2d(out_features),
+            )
+        else:
+            # Use standard architecture
+            self.conv = nn.Sequential(
+                nn.Conv2d(
+                    in_features, out_features, 
+                    kernel_size=3, padding=1, bias=False
+                ),
+                nn.InstanceNorm2d(out_features),
+                nn.ReLU(),
+                nn.Conv2d(
+                    out_features, out_features, 
+                    kernel_size=3, padding=1, bias=False
+                ),
+                nn.InstanceNorm2d(out_features),
+            )
 
         # Define shortcut connection
-        if stride != 1 or in_features != out_features:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_features, out_features, kernel_size=1, stride=stride, bias=False),
+        if in_features != out_features:
+            self.shortcut = nn.Conv2d(
+                in_features, out_features, 
+                kernel_size=1, bias=False,
             )
         else:
             self.shortcut = nn.Identity()
@@ -63,8 +89,8 @@ class ResNetBlock(nn.Module):
 class ResNet(nn.Module):
     def __init__(self,
             in_channels, out_channels,
-            n_layers=8, n_blocks_per_layer=2, n_features=64,
-            expansion=2, bottleneck=False, **kwargs
+            n_layers=8, n_features=8, n_blocks_per_layer=2,
+            expansion=2, bottleneck=True, **kwargs
         ):
         super(ResNet, self).__init__()
 
@@ -82,30 +108,27 @@ class ResNet(nn.Module):
 
         # Initialize resnet blocks
         self.blocks = nn.ModuleList()
-
-        # Add encoder layers
+        
+        # Encode layers
         n_in = n_features
-        for i in range(0, n_layers // 2):
+        for i in range(n_layers//2):
             n_out = n_in * expansion
-            for j in range(n_blocks_per_layer):
-                self.blocks.append(ResNetBlock(n_in, n_out))
-                n_in = n_out
+            block = nn.Sequential(
+                ResNetBlock(n_in, n_out, bottleneck=bottleneck),
+                *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_blocks_per_layer-1)]
+            )
+            self.blocks.append(block)
+            n_in = n_out
 
-        # Add bottleneck layer
-        n_mid = n_in // 4
-        if bottleneck:
-            self.blocks.append(nn.Sequential(
-                ResNetBlock(n_in, n_mid, kernel_size=1),
-                ResNetBlock(n_mid, n_mid),
-                ResNetBlock(n_mid, n_out, kernel_size=1),
-            ))
-
-        # Add decoder layers
-        for i in range(n_layers // 2, n_layers):
+        # Decode layers
+        for i in range(n_layers//2, n_layers):
             n_out = n_in // expansion
-            for j in range(n_blocks_per_layer):
-                self.blocks.append(ResNetBlock(n_in, n_out))
-                n_in = n_out
+            block = nn.Sequential(
+                ResNetBlock(n_in, n_out, bottleneck=bottleneck),
+                *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_blocks_per_layer-1)]
+            )
+            self.blocks.append(block)
+            n_in = n_out
 
         # Set output layer
         self.set_output_layer(out_channels)
@@ -133,7 +156,17 @@ class ResNet(nn.Module):
 
 
 
+# Test the model
+if __name__ == '__main__':
+    
+    # Set up model
+    model = ResNet(3, 2, n_layers=8, n_features=8, n_blocks_per_layer=2, expansion=2, bottleneck=True)
+    print(model)
 
+    # Set up input tensor
+    x = torch.randn(1, 3, 128, 128)
+    y = model(x)
+    print(x.shape, '->', y.shape)
         
                 
 

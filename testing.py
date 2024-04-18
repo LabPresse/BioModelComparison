@@ -10,7 +10,7 @@ from helper_functions import plot_roc_curve
 
 
 # Define a function to evaluate a PyTorch model
-def evaluate_model(model, dataset, verbose=True, plot=False):
+def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
     """Evaluate a PyTorch model on a dataset."""
 
     # Print status
@@ -34,9 +34,9 @@ def evaluate_model(model, dataset, verbose=True, plot=False):
     predicted_probs = []
 
     # Iterate over the dataloader
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
     for i, (x, y) in enumerate(dataloader):
-        if verbose:
+        if verbose and ((i % 10 == 0) or (len(dataloader) < 20)):
             print(f'--Batch {i + 1}/{len(dataloader)}')
 
         # Move the data to the device
@@ -96,13 +96,13 @@ def evaluate_model(model, dataset, verbose=True, plot=False):
 
     # Package the metrics in a dictionary
     metrics = {
+        'accuracy': accuracy,
         'sensitivity': sensitivity,
         'specificity': specificity,
-        'accuracy': accuracy,
+        'auc_score': auc_score,
         'roc_fpr': roc_fpr,
         'roc_tpr': roc_tpr,
         'roc_thresholds': roc_thresholds,
-        'auc_score': auc_score
     }
 
     # Return the evaluation metrics

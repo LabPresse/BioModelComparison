@@ -49,7 +49,7 @@ class VisionTransformer(nn.Module):
     def __init__(self, 
             img_size, in_channels, out_channels,
             n_layers=8, n_features=64,
-            n_heads=16, patch_size=8, use_cls_token=True, **kwargs
+            n_heads=8, patch_size=8, use_cls_token=True, **kwargs
         ):
         super(VisionTransformer, self).__init__()
 

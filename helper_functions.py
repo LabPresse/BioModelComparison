@@ -5,6 +5,26 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+# Convert to serializable function
+def convert_to_serializable(item):
+    if isinstance(item, dict):
+        return {k: convert_to_serializable(v) for k, v in item.items()}
+    elif isinstance(item, list):
+        return [convert_to_serializable(v) for v in item]
+    elif isinstance(item, tuple):
+        return tuple(convert_to_serializable(v) for v in item)
+    elif isinstance(item, set):
+        return {convert_to_serializable(v) for v in item}
+    elif isinstance(item, np.generic):
+        return item.item()
+    elif isinstance(item, np.ndarray):
+        return convert_to_serializable(item.tolist())
+    elif isinstance(item, torch.Tensor):
+        return convert_to_serializable(item.cpu().detach().numpy())
+    else:
+        return item
+
 # Count trainable parameters
 def count_parameters(model, verbose=False):
     """Count the number of trainable parameters in a model."""
@@ -199,7 +219,7 @@ def plot_images(images=None, col_labels=None, **image_dict):
 
 
 # Plor ROC curve function
-def plot_roc_curve(fpr, tpr, auc_score=None):
+def plot_roc_curve(fpr, tpr, accuracy=None, sensitivity=None, specificity=None, auc_score=None):
     """Plot the ROC curve with the AUC score."""
     
     # Set up figure
@@ -209,11 +229,16 @@ def plot_roc_curve(fpr, tpr, auc_score=None):
     plt.show()
 
     # Set up label
+    label = 'ROC curve'
     if auc_score is not None:
         auc_score = round(auc_score, 2)
-        label = f'ROC curve (AUC = {auc_score})'
-    else:
-        label = 'ROC curve'
+        label = label + f' (AUC = {auc_score})'
+    if accuracy is not None:
+        accuracy = round(accuracy, 2)
+        label = label + f' (Accuracy = {accuracy})'
+    if sensitivity is not None:
+        sensitivity = round(sensitivity, 2)
+        label = label + f' (Sensitivity = {sensitivity})'
 
     # Plot ROC curve
     ax.plot([0, 1], [0, 1], color='gray', linestyle='--', label='Random')

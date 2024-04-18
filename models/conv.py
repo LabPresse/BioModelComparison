@@ -6,7 +6,7 @@ import torch.nn as nn
 
 # Define the ConvolutionalNet class
 class ConvolutionalNet(nn.Module):
-    def __init__(self, in_channels, out_channels, n_features=8, n_layers=16, activation=nn.GELU()):
+    def __init__(self, in_channels, out_channels, n_features=8, n_layers=16, activation=None):
         super(ConvolutionalNet, self).__init__()
 
         # Set up attributes
@@ -14,6 +14,17 @@ class ConvolutionalNet(nn.Module):
         self.out_channels = out_channels
         self.n_features = n_features
         self.n_layers = n_layers
+        self.activation = activation
+
+        # Get activation function
+        if activation is None:
+            activation_layer = nn.ReLU()
+        elif activation.lower() == 'relu':
+            activation_layer = nn.ReLU()
+        elif activation.lower() == 'leakyrelu':
+            activation_layer = nn.LeakyReLU()
+        elif activation.lower() == 'gelu':
+            activation_layer = nn.GELU()
 
 
         ### SET UP BLOCKS ###
@@ -38,7 +49,7 @@ class ConvolutionalNet(nn.Module):
                 nn.Sequential(
                     nn.Conv2d(n_in, n_out, kernel_size=3, padding=1),
                     nn.GroupNorm(1, n_out),
-                    activation,
+                    activation_layer,
                 )
             )
 
