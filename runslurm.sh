@@ -11,7 +11,7 @@ echo "   -$((i+1))/$num_jobs"
 printf "#!/bin/bash
 
 #SBATCH -D /home/jsbryan4/BioModelComparison/
-#SBATCH -t 3-00:00:00
+#SBATCH -t 4-00:00
 #SBATCH -o .slurmjobs/job$i.out
 #SBATCH -e .slurmjobs/job$i.err
 
