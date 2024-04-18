@@ -11,10 +11,10 @@ echo "   -$((i+1))/$num_jobs"
 printf "#!/bin/bash
 
 #SBATCH -D /home/jsbryan4/BioModelComparison/
-#SBATCH -p spressecpu
+#SBATCH -p spressecpu1
 #SBATCH -t 7-00:00:00
-#SBATCH -o job$i.out
-#SBATCH -e job$i.err
+#SBATCH -o .slurmjobs/job$i.out
+#SBATCH -e .slurmjobs/job$i.err
 
 module load anaconda/py3
 source .env/bin/activate
