@@ -18,7 +18,7 @@ printf "#!/bin/bash
 #SBATCH -c 1
 #SBATCH -N 1 
 
-module load anaconda/py3
+module load mamba/latest
 source .env/bin/activate
 
 stdbuf -oL python main.py $i
