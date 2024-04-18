@@ -160,9 +160,7 @@ cython_debug/
 #.idea/
 
 # Keep data directory, but ignore contents
-data/*.png
-data/*/*.png
-data/*/*/*.png
+data/*
 
 # Keep outfiles directory, but ignore contents
 outfiles/*
