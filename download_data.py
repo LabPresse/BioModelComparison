@@ -148,6 +148,18 @@ def get_neurons_dataset():
 ### Download datasets ###
 if __name__ == "__main__":
 
+    # Make directories
+    os.makedirs(root, exist_ok=True)
+    os.makedirs(os.path.join(root, 'retinas'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'retinas', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'retinas', 'masks'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'bdello'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'bdello', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'bdello', 'masks'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'neurons'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'neurons', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'neurons', 'masks'), exist_ok=True)
+
     # Download datasets
     get_retina_dataset()
     get_bdello_datset()
