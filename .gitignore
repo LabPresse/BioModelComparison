@@ -162,5 +162,8 @@ cython_debug/
 # Keep data directory, but ignore contents
 data/*
 
+# Keep .slurmjobs directory, but ignore contents
+.slurmjobs/*
+
 # Keep outfiles directory, but ignore contents
 outfiles/*
