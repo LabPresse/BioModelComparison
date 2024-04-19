@@ -157,38 +157,41 @@ def run_training_scheme(
 if __name__ == "__main__":
     
     # Get job id from sys
-    jobID = 8
+    jobID = 10
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
         
     # Set up datasets, models, and options
     datasets = ['bdello', 'retinas', 'neurons']
     model_options = [
-        # ConvolutionalNet: n_layers (8, 16, 32), activation (relu, gelu)
+        # ConvolutionalNet
         ['conv', {'n_layers': 8, 'activation': 'relu'}],
         ['conv', {'n_layers': 16, 'activation': 'relu'}],
         ['conv', {'n_layers': 32, 'activation': 'relu'}],
+        ['conv', {'n_layers': 8, 'activation': 'gelu'}],
         ['conv', {'n_layers': 16, 'activation': 'gelu'}],
-        # VisionTransformer: Smaller images: n_layers (8, 16, 32), n_features (32, 64, 128), use_cls_token (True, False)
+        ['conv', {'n_layers': 32, 'activation': 'gelu'}],
+        # VisionTransformer
         ['vit', {'img_size': 128, 'n_layers': 8, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 32, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 32}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 128}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64, 'use_cls_token': False}],
-        # UNet: n_blocks (2, 3, 4), n_layers_per_block (2, 4), expansion (1, 2)
-        ['unet', {'n_blocks': 2, 'n_layers_per_block': 2}],
-        ['unet', {'n_blocks': 3, 'n_layers_per_block': 2}],
-        ['unet', {'n_blocks': 4, 'n_layers_per_block': 2}],
+        # UNet
+        ['unet', {'n_blocks': 2, 'n_layers_per_block': 4}],
         ['unet', {'n_blocks': 3, 'n_layers_per_block': 4}],
+        ['unet', {'n_blocks': 4, 'n_layers_per_block': 4}],
+        ['unet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1}],
         ['unet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 1}],
-        # ResNet: n_layers (8, 16, 32) with bottleneck (True, False)
-        ['resnet', {'n_layers': 8, 'expansion': 1, 'bottleneck': False}],
-        ['resnet', {'n_layers': 16, 'expansion': 1, 'bottleneck': False}],
-        ['resnet', {'n_layers': 32, 'expansion': 1, 'bottleneck': False}],
-        ['resnet', {'n_layers': 8, 'expansion': 2, 'bottleneck': True}],
-        ['resnet', {'n_layers': 16, 'expansion': 2, 'bottleneck': True}],
-        ['resnet', {'n_layers': 32, 'expansion': 2, 'bottleneck': True}],
+        ['unet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 1}],
+        # ResNet
+        ['resnet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1, 'bottleneck': False}],
+        ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 1, 'bottleneck': False}],
+        ['resnet', {'n_blocks': 2, 'n_layers_per_block': 16, 'expansion': 1, 'bottleneck': False}],
+        ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_blocks': 4, 'n_layers_per_block': 2, 'expansion': 2, 'bottleneck': True}],
     ]
 
     # Set up all jobs

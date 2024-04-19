@@ -89,7 +89,7 @@ class ResNetBlock(nn.Module):
 class ResNet(nn.Module):
     def __init__(self,
             in_channels, out_channels,
-            n_layers=8, n_features=8, n_blocks_per_layer=2,
+            n_blocks=4, n_features=8, n_layers_per_block=2,
             expansion=2, bottleneck=True, **kwargs
         ):
         super(ResNet, self).__init__()
@@ -97,7 +97,7 @@ class ResNet(nn.Module):
         # Set attributes
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.n_layers = n_layers
+        self.n_layers = n_blocks
         self.n_features = n_features
         self.bottleneck = bottleneck
 
@@ -111,21 +111,21 @@ class ResNet(nn.Module):
         
         # Encode layers
         n_in = n_features
-        for i in range(n_layers//2):
+        for i in range(n_blocks//2):
             n_out = n_in * expansion
             block = nn.Sequential(
                 ResNetBlock(n_in, n_out, bottleneck=bottleneck),
-                *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_blocks_per_layer-1)]
+                *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_layers_per_block-1)]
             )
             self.blocks.append(block)
             n_in = n_out
 
         # Decode layers
-        for i in range(n_layers//2, n_layers):
+        for i in range(n_blocks//2, n_blocks):
             n_out = n_in // expansion
             block = nn.Sequential(
                 ResNetBlock(n_in, n_out, bottleneck=bottleneck),
-                *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_blocks_per_layer-1)]
+                *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_layers_per_block-1)]
             )
             self.blocks.append(block)
             n_in = n_out
@@ -160,7 +160,7 @@ class ResNet(nn.Module):
 if __name__ == '__main__':
     
     # Set up model
-    model = ResNet(3, 2, n_layers=8, n_features=8, n_blocks_per_layer=2, expansion=2, bottleneck=True)
+    model = ResNet(3, 2, n_blocks=8, n_features=8, n_layers_per_block=2, expansion=2, bottleneck=True)
     print(model)
 
     # Set up input tensor
