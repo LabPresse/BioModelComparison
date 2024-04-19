@@ -157,7 +157,7 @@ def run_training_scheme(
 if __name__ == "__main__":
     
     # Get job id from sys
-    jobID = 10
+    jobID = 22
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
         
@@ -190,8 +190,8 @@ if __name__ == "__main__":
         ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 1, 'bottleneck': False}],
         ['resnet', {'n_blocks': 2, 'n_layers_per_block': 16, 'expansion': 1, 'bottleneck': False}],
         ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 2, 'bottleneck': True}],
-        ['resnet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 2, 'bottleneck': True}],
-        ['resnet', {'n_blocks': 4, 'n_layers_per_block': 2, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_blocks': 6, 'n_layers_per_block': 4, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_blocks': 8, 'n_layers_per_block': 2, 'expansion': 2, 'bottleneck': True}],
     ]
 
     # Set up all jobs
@@ -221,8 +221,7 @@ if __name__ == "__main__":
         modelID, 
         dataID, 
         savename,
-        n_epochs=1,  # TODO: Set to 50
-        max_samples=100,  # TODO: Delete
+        n_epochs=50,
         verbose=True,
         **options
     )

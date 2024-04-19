@@ -113,6 +113,7 @@ class ResNet(nn.Module):
         n_in = n_features
         for i in range(n_blocks//2):
             n_out = n_in * expansion
+            print(n_in, n_out)
             block = nn.Sequential(
                 ResNetBlock(n_in, n_out, bottleneck=bottleneck),
                 *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_layers_per_block-1)]
@@ -123,6 +124,7 @@ class ResNet(nn.Module):
         # Decode layers
         for i in range(n_blocks//2, n_blocks):
             n_out = n_in // expansion
+            print(n_in, n_out)
             block = nn.Sequential(
                 ResNetBlock(n_in, n_out, bottleneck=bottleneck),
                 *[ResNetBlock(n_out, n_out, bottleneck=bottleneck) for _ in range(n_layers_per_block-1)]
