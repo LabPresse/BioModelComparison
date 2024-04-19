@@ -9,9 +9,10 @@ from torch.utils.data import Subset, random_split
 
 # Import local modules
 from helper_functions import plot_images, count_parameters, check_gradient, convert_to_serializable
-from models.unet import UNet
-from models.vit import VisionTransformer
 from models.conv import ConvolutionalNet
+from models.unet import UNet
+from models.resnet import ResNet
+from models.vit import VisionTransformer
 # from models.resnet import ResNet
 from datasets.bdello import BdelloDataset
 from datasets.retinas import RetinaDataset
@@ -74,6 +75,7 @@ def run_training_scheme(
 
     # Get model
     if modelID == 'conv':
+        # ConvolutionalNet
         model = ConvolutionalNet(
             in_channels=in_channels, 
             out_channels=out_channels,
@@ -81,12 +83,21 @@ def run_training_scheme(
         )
         pretrainargs['dae'] = True  # Denoising autoencoder
     elif modelID == 'unet':
+        # UNet
         model = UNet(
             in_channels=in_channels, 
             out_channels=out_channels,
             **modelargs
         )
         pretrainargs['dae'] = True  # Denoising autoencoder
+    elif modelID == 'resnet':
+        # ResNet
+        model = ResNet(
+            in_channels=in_channels, 
+            out_channels=out_channels,
+            **modelargs
+        )
+        pretrainargs['dae'] = True
     elif modelID == 'vit':
         model = VisionTransformer(
             img_size=img_size, 
@@ -207,7 +218,7 @@ if __name__ == "__main__":
         modelID, 
         dataID, 
         savename,
-        n_epochs=50,
+        n_epochs=1,
         verbose=True,
         **options
     )

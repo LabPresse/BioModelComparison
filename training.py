@@ -110,7 +110,7 @@ def train_model(model, datasets, savepath,
 
         # Get validation loss
         if verbose:
-            print('--Validating')
+            print('Validating')
         total_val_loss = 0
         for i, batch in enumerate(dataloader_val):
             if verbose and ((i % 10 == 0) or len(dataloader_val) < 20):
