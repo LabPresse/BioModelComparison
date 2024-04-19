@@ -194,7 +194,7 @@ if __name__ == "__main__":
     # Set up all jobs
     all_jobs = []
     for ffcvid in range(5):
-        for pretrain in [False, True]:
+        for pretrain in [True, False]:
             for dataID in datasets:
                 for modelID, options in model_options:
                     all_jobs.append((
