@@ -218,7 +218,8 @@ if __name__ == "__main__":
         modelID, 
         dataID, 
         savename,
-        n_epochs=1,
+        n_epochs=1,  # TODO: Set to 50
+        max_samples=100,  # TODO: Delete
         verbose=True,
         **options
     )

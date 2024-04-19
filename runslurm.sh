@@ -17,6 +17,7 @@ printf "#!/bin/bash
 #SBATCH -e .slurmjobs/job$i.err
 #SBATCH -c 1
 #SBATCH -N 1 
+#SBATCH --mem=8G
 
 module load mamba
 source activate myenv
