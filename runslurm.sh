@@ -12,7 +12,7 @@ printf "#!/bin/bash
 
 #SBATCH -p general
 #SBATCH -D /home/jsbryan4/BioModelComparison/
-#SBATCH -t 1:00:00
+#SBATCH -t 15:00
 #SBATCH -o .slurmjobs/job$i.out
 #SBATCH -e .slurmjobs/job$i.err
 #SBATCH -c 1
