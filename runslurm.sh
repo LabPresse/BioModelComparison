@@ -21,7 +21,7 @@ printf "#!/bin/bash
 module load mamba
 source activate myenv
 
-stdbuf -oL python main.py $i
+python -u main.py $i
 
 " > ".slurmjobs/job$i.sh"
 
