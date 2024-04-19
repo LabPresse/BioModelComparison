@@ -157,7 +157,7 @@ def run_training_scheme(
 if __name__ == "__main__":
     
     # Get job id from sys
-    jobID = 80
+    jobID = 8
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
         
@@ -193,10 +193,10 @@ if __name__ == "__main__":
 
     # Set up all jobs
     all_jobs = []
-    for dataID in datasets:
-        for modelID, options in model_options:
-            for pretrain in [False, True]:
-                for ffcvid in range(5):
+    for ffcvid in range(5):
+        for pretrain in [False, True]:
+            for dataID in datasets:
+                for modelID, options in model_options:
                     all_jobs.append((
                         modelID, 
                         dataID, 
