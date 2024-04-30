@@ -110,6 +110,9 @@ def run_training_scheme(
 
     # Pretrain as autoencoder if necessary
     if pretrain:
+        if verbose:
+            print('Pretraining model as autoencoder.')
+
         # Modify output layer
         model.set_output_layer(in_channels)
 
@@ -123,6 +126,8 @@ def run_training_scheme(
         )
 
         # Save statistics as json
+        if verbose:
+            print('Saving pretraining statistics.')
         with open(os.path.join(outpath, f'{savename}_pretrain.json'), 'w') as f:
             json.dump(statistics, f, default=convert_to_serializable)
 
@@ -144,6 +149,8 @@ def run_training_scheme(
     statistics['test_metrics'] = test_metrics
 
     # Save statistics as json
+    if verbose:
+        print('Saving statistics.')
     with open(os.path.join(outpath, f'{savename}.json'), 'w') as f:
         json.dump(statistics, f, default=convert_to_serializable)
 
@@ -176,12 +183,13 @@ if __name__ == "__main__":
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 32, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 32}],
+    #   ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 128}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64, 'use_cls_token': False}],
         # UNet
-        ['unet', {'n_blocks': 2, 'n_layers_per_block': 4}],
-        ['unet', {'n_blocks': 3, 'n_layers_per_block': 4}],
-        ['unet', {'n_blocks': 4, 'n_layers_per_block': 4}],
+        ['unet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 2}],
+        ['unet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 2}],
+        ['unet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 2}],
         ['unet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1}],
         ['unet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 1}],
         ['unet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 1}],
@@ -190,8 +198,8 @@ if __name__ == "__main__":
         ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 1, 'bottleneck': False}],
         ['resnet', {'n_blocks': 2, 'n_layers_per_block': 16, 'expansion': 1, 'bottleneck': False}],
         ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 2, 'bottleneck': True}],
-        ['resnet', {'n_blocks': 6, 'n_layers_per_block': 4, 'expansion': 2, 'bottleneck': True}],
-        ['resnet', {'n_blocks': 8, 'n_layers_per_block': 2, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 2, 'bottleneck': True}],
+        ['resnet', {'n_blocks': 6, 'n_layers_per_block': 2, 'expansion': 2, 'bottleneck': True}],
     ]
 
     # Set up all jobs
@@ -221,7 +229,7 @@ if __name__ == "__main__":
         modelID, 
         dataID, 
         savename,
-        n_epochs=50,
+        n_epochs=100,
         verbose=True,
         **options
     )

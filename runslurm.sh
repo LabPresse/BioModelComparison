@@ -10,14 +10,15 @@ echo "   -$((i+1))/$num_jobs"
 
 printf "#!/bin/bash
 
-#SBATCH -p general
+#SBATCH -q grp_spresse
+#SBATCH --partition=general
 #SBATCH -D /home/jsbryan4/BioModelComparison/
-#SBATCH -t 5-00:00:00
+#SBATCH -t 7-00:00:00
 #SBATCH -o .slurmjobs/job$i.out
 #SBATCH -e .slurmjobs/job$i.err
 #SBATCH -c 1
 #SBATCH -N 1 
-#SBATCH --mem=8G
+#SBATCH --mem=10G
 
 module load mamba
 source activate myenv

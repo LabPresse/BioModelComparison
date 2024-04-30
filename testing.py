@@ -80,7 +80,7 @@ def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
     # Calculate the ROC curve and AUC score
     roc_fpr, roc_tpr, roc_thresholds = roc_curve(
         true_labels.reshape(-1),
-        predicted_probs[:, 1].reshape(-1),
+        np.round(predicted_probs[:, 1].reshape(-1), 3),  # Round input to avoid too many thresholds
     )
     auc_score = roc_auc_score(
         true_labels.reshape(-1),

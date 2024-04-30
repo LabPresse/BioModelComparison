@@ -153,6 +153,7 @@ def train_model(model, datasets, savepath,
 
     # Finalize training stats
     statistics = {
+        'n_parameters': int(sum(p.numel() for p in model.parameters())),
         'train_losses': train_losses,
         'val_losses': val_losses,
         'min_val_loss': min_val_loss,

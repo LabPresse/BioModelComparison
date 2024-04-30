@@ -6,6 +6,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+# Get savename
+def get_savename(modelID, dataID, options, ffcvid=0):
+    savename = f'{modelID}_{dataID}'
+    for key in sorted(list(options.keys())):
+        savename += f'_{key}={options[key]}'
+    savename += f'_ffcv={ffcvid}'
+    return savename
+
+
 # Convert to serializable function
 def convert_to_serializable(item):
     if isinstance(item, dict):
@@ -24,6 +33,7 @@ def convert_to_serializable(item):
         return convert_to_serializable(item.cpu().detach().numpy())
     else:
         return item
+
 
 # Count trainable parameters
 def count_parameters(model, verbose=False):
@@ -152,7 +162,11 @@ def plot_images(images=None, col_labels=None, **image_dict):
 
     # Send tensors to cpu and numpy
     for key in image_dict.keys():
-        image_dict[key] = image_dict[key].float().cpu().detach().numpy()
+        val = image_dict[key]
+        if isinstance(val, torch.Tensor):
+            image_dict[key] = image_dict[key].float().cpu().detach().numpy()
+        elif isinstance(val, np.ndarray):
+            image_dict[key] = image_dict[key].astype(float)
 
     # Assert that all image arrays have the same number of images
     num_images = image_dict[list(image_dict.keys())[0]].shape[0]
@@ -179,7 +193,7 @@ def plot_images(images=None, col_labels=None, **image_dict):
     for i, (key, val) in enumerate(image_dict.items()):
 
         # Set label
-        ax[i, 0].set_ylabel(key,)
+        ax[i, 0].set_ylabel(key)
 
         # Loop over images
         for j in range(val.shape[0]):
@@ -215,7 +229,9 @@ def plot_images(images=None, col_labels=None, **image_dict):
             ax[i, j].set_yticks([])
     plt.tight_layout()
     plt.pause(.1)
-    return
+    
+    # Return
+    return fig, ax
 
 
 # Plor ROC curve function
@@ -252,4 +268,4 @@ def plot_roc_curve(fpr, tpr, accuracy=None, sensitivity=None, specificity=None, 
     plt.pause(.1)
     
     # Return
-    return
+    return fig, ax
