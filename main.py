@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Subset, random_split
 
 # Import local modules
-from helper_functions import plot_images, count_parameters, check_gradient, convert_to_serializable
+from helper_functions import plot_images, count_parameters, check_gradient, convert_to_serializable, get_savename
 from models.conv import ConvolutionalNet
 from models.unet import UNet
 from models.resnet import ResNet
@@ -162,11 +162,6 @@ def run_training_scheme(
 
 # Run training scheme
 if __name__ == "__main__":
-    
-    # Get job id from sys
-    jobID = 22
-    if len(sys.argv) > 1:
-        jobID = int(sys.argv[1])
         
     # Set up datasets, models, and options
     datasets = ['bdello', 'retinas', 'neurons']
@@ -175,9 +170,9 @@ if __name__ == "__main__":
         ['conv', {'n_layers': 8, 'activation': 'relu'}],
         ['conv', {'n_layers': 16, 'activation': 'relu'}],
         ['conv', {'n_layers': 32, 'activation': 'relu'}],
-        ['conv', {'n_layers': 8, 'activation': 'gelu'}],
-        ['conv', {'n_layers': 16, 'activation': 'gelu'}],
-        ['conv', {'n_layers': 32, 'activation': 'gelu'}],
+        # ['conv', {'n_layers': 8, 'activation': 'gelu'}],
+        # ['conv', {'n_layers': 16, 'activation': 'gelu'}],
+        # ['conv', {'n_layers': 32, 'activation': 'gelu'}],
         # VisionTransformer
         ['vit', {'img_size': 128, 'n_layers': 8, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64}],
@@ -185,18 +180,18 @@ if __name__ == "__main__":
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 32}],
     #   ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64}],
         ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 128}],
-        ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64, 'use_cls_token': False}],
+        # ['vit', {'img_size': 128, 'n_layers': 16, 'n_features': 64, 'use_cls_token': False}],
         # UNet
         ['unet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 2}],
         ['unet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 2}],
         ['unet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 2}],
-        ['unet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1}],
-        ['unet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 1}],
-        ['unet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 1}],
+        # ['unet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1}],
+        # ['unet', {'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 1}],
+        # ['unet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 1}],
         # ResNet
-        ['resnet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1, 'bottleneck': False}],
-        ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 1, 'bottleneck': False}],
-        ['resnet', {'n_blocks': 2, 'n_layers_per_block': 16, 'expansion': 1, 'bottleneck': False}],
+        # ['resnet', {'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1, 'bottleneck': False}],
+        # ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 1, 'bottleneck': False}],
+        # ['resnet', {'n_blocks': 2, 'n_layers_per_block': 16, 'expansion': 1, 'bottleneck': False}],
         ['resnet', {'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 2, 'bottleneck': True}],
         ['resnet', {'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 2, 'bottleneck': True}],
         ['resnet', {'n_blocks': 6, 'n_layers_per_block': 2, 'expansion': 2, 'bottleneck': True}],
@@ -214,22 +209,24 @@ if __name__ == "__main__":
                         {**options, 'pretrain':pretrain}, ffcvid
                     ))
     n_jobs = len(all_jobs)
+    
+    # Get job id from sys
+    jobID = 0
+    if len(sys.argv) > 1:
+        jobID = int(sys.argv[1])
 
     # Get job parameters
     modelID, dataID, options, ffcvid = all_jobs[jobID]
 
     # Configure savename
-    savename = f'{modelID}_{dataID}'
-    for key in sorted(list(options.keys())):
-        savename += f'_{key}={options[key]}'
-    savename += f'_ffcv={ffcvid}'
-
+    savename = get_savename(modelID, dataID, options, ffcvid)
+    
     # Run training scheme
     run_training_scheme(
         modelID, 
         dataID, 
         savename,
-        n_epochs=100,
+        n_epochs=20,
         verbose=True,
         **options
     )

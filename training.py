@@ -88,8 +88,7 @@ def train_model(model, datasets, savepath,
 
         # Iterate over batches
         for i, batch in enumerate(dataloader_train):
-            if verbose and ((i % 10 == 0) or len(dataloader_train) < 20):
-                print(f'--Batch {i+1}/{len(dataloader_train)}')
+            t_batch = time.time()
 
             # Zero gradients
             optimizer.zero_grad()
@@ -106,6 +105,15 @@ def train_model(model, datasets, savepath,
 
             # Update loss
             total_train_loss += loss.item()
+
+            # Print status
+            if verbose and ((i % 10 == 0) or len(dataloader_train) < 20):
+                status = ' '.join([
+                    f'--',
+                    f'Batch {i+1}/{len(dataloader_train)}',
+                    f'({(time.time()-t_batch):.2f} s/batch)',
+                ])
+                print(status)
 
 
         # Get validation loss

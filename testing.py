@@ -71,6 +71,7 @@ def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
     sensitivity = tp / (tp + fn)
     specificity = tn / (tn + fp)
     accuracy = (tp + tn) / (tp + tn + fp + fn)
+    f1score = 2 * tp / (2 * tp + fp + fn)
 
 
     ### CALCULATE ROC CURVE AND AUC SCORE ###
@@ -99,6 +100,7 @@ def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
         'accuracy': accuracy,
         'sensitivity': sensitivity,
         'specificity': specificity,
+        'f1score': f1score,
         'auc_score': auc_score,
         'roc_fpr': roc_fpr,
         'roc_tpr': roc_tpr,
