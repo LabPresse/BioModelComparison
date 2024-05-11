@@ -6,7 +6,10 @@ import torch.nn as nn
 
 # Define the ConvolutionalNet class
 class ConvolutionalNet(nn.Module):
-    def __init__(self, in_channels, out_channels, n_features=8, n_layers=16, activation=None):
+    def __init__(self, 
+            in_channels, out_channels, 
+            n_features=8, n_layers=16
+        ):
         super(ConvolutionalNet, self).__init__()
 
         # Set up attributes
@@ -14,55 +17,30 @@ class ConvolutionalNet(nn.Module):
         self.out_channels = out_channels
         self.n_features = n_features
         self.n_layers = n_layers
-        self.activation = activation
-
-        # Get activation function
-        if activation is None:
-            activation_layer = nn.ReLU()
-        elif activation.lower() == 'relu':
-            activation_layer = nn.ReLU()
-        elif activation.lower() == 'leakyrelu':
-            activation_layer = nn.LeakyReLU()
-        elif activation.lower() == 'gelu':
-            activation_layer = nn.GELU()
 
 
         ### SET UP BLOCKS ###
 
         # Set up input block
         self.input_block = nn.Sequential(
-            nn.GroupNorm(1, in_channels),
+            nn.InstanceNorm2d(in_channels),  # Normalize input
             nn.Conv2d(in_channels, n_features, kernel_size=3, padding=1),
         )
 
         # Set up layers
         self.layers = nn.ModuleList()
         for i in range(n_layers):
-
-            # Initialize layers
-            layers = []
-
-            # Convolutional layer
-            n_in = n_features
-            n_out = n_features
-            layers.append(
+            self.layers.append(
                 nn.Sequential(
-                    nn.Conv2d(n_in, n_out, kernel_size=3, padding=1),
-                    nn.GroupNorm(1, n_out),
-                    activation_layer,
+                    nn.Conv2d(n_features, n_features, kernel_size=3, padding=1),
+                    nn.InstanceNorm2d(n_features),
+                    nn.ReLU(),
                 )
             )
 
-            # Add to list
-            self.layers.append(nn.Sequential(*layers))
-
         # Set up output block
-        self.set_output_layer(out_channels)
-
-    def set_output_layer(self, out_channels):
-        """Set the output layer to have the given number of channels."""
         self.output_block = nn.Sequential(
-            nn.Conv2d(self.n_features, out_channels, kernel_size=1),
+            nn.Conv2d(n_features, out_channels, kernel_size=1),
         )
 
     def forward(self, x):
@@ -80,3 +58,23 @@ class ConvolutionalNet(nn.Module):
 
         # Return
         return x
+
+
+# Test model
+if __name__ == '__main__':
+    
+    # Set up model
+    model = ConvolutionalNet(3, 1, n_features=8, n_layers=16)
+
+    # Print number of parameters
+    print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+
+    # Set up input tensor
+    x = torch.randn(1, 3, 256, 256)
+
+    # Test model
+    y = model(x)
+
+    # Print output shape
+    print(y.shape)
+

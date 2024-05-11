@@ -162,11 +162,12 @@ cython_debug/
 # Keep data directory, but ignore contents
 data/*
 !data/.gitkeep
+!data/download_data.py
 
 # Keep .slurmjobs directory, but ignore contents
-.slurmjobs/*
-!.slurmjobs/.gitkeep
+cluster/.slurmjobs/*
+!cluster/.slurmjobs/.gitkeep
 
 # Keep outfiles directory, but ignore contents
-outfiles/*
-!outfiles/.gitkeep
+cluster/outfiles/*
+!cluster/outfiles/.gitkeep

@@ -35,7 +35,7 @@ brew install unrar
 Once you have your API key and rar, you can download the datasets by running the following commands in your terminal:
 
 ```bash
-python download_data.py
+python datasets/download_data.py
 ```
 
 This will take a few minutes to download the datasets and extract them into the `data/` directory.

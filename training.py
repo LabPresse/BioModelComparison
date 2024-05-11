@@ -4,24 +4,20 @@ import os
 import time
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
 # Import local modules
 from helper_functions import plot_images
-from testing import evaluate_model
 
 
 # Define training function
-def train_model(model, datasets, savepath,
-    segmentation=False, autoencoder=False, mae=False, dae=False,
-    batch_size=32, n_epochs=50, lr=1e-3, num_workers=0,
-    verbose=True, plot=True
+def train_model(
+        model, datasets, savepath,
+        batch_size=32, n_epochs=50, lr=1e-3,
+        verbose=True, plot=True
     ):
-
-    # Check inputs
-    if not (segmentation or autoencoder):
-        raise ValueError('Must specify either segmentation or autoencoder.')
 
     # Print status
     if verbose:
@@ -32,50 +28,19 @@ def train_model(model, datasets, savepath,
     device = next(model.parameters()).device
 
     # Track training stats
+    epoch_times = []
     train_losses = []
     val_losses = []
     min_val_loss = float('inf')
-    epoch_times = []
 
     # Set up data loaders
     dataset_train, dataset_val, _ = datasets
-    dataloader_train = DataLoader(
-        dataset_train, 
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
-    )
-    dataloader_val = DataLoader(
-        dataset_val, 
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
-    )
+    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
+    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
 
     # Set up optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     max_grad_norm = 1/lr  # Max parameter update is 1
-
-    # Set up criterion
-    if segmentation:
-        loss_function = torch.nn.CrossEntropyLoss()
-    elif autoencoder:
-        loss_function = torch.nn.MSELoss()
-
-    # Define extract batch function
-    def extract_batch(batch):
-        if segmentation:
-            x, y = batch
-            x = x.float()
-            y = y.long()
-        elif autoencoder:
-            x, _ = batch
-            x = x.to(device).float()
-            y = x.clone()
-            if dae:
-                x = x + .1 * torch.randn_like(x)
-            if mae:
-                mask = model.create_mask(x.shape[0])
-                x = x * mask
-        x = x.to(device)
-        y = y.to(device)
-        return x, y
 
     # Train model
     for epoch in range(n_epochs):
@@ -87,16 +52,19 @@ def train_model(model, datasets, savepath,
         total_train_loss = 0
 
         # Iterate over batches
-        for i, batch in enumerate(dataloader_train):
+        for i, (x, y) in enumerate(dataloader_train):
             t_batch = time.time()
+            
+            # Set up batch
+            x = x.float().to(device)
+            y = y.long().to(device)
 
             # Zero gradients
             optimizer.zero_grad()
 
             # Calculate loss
-            x, y = extract_batch(batch)
             output = model(x)
-            loss = loss_function(output, y)
+            loss = F.cross_entropy(output, y)
 
             # Backward pass
             loss.backward()
@@ -120,12 +88,13 @@ def train_model(model, datasets, savepath,
         if verbose:
             print('Validating')
         total_val_loss = 0
-        for i, batch in enumerate(dataloader_val):
+        for i, (x, y) in enumerate(dataloader_val):
             if verbose and ((i % 10 == 0) or len(dataloader_val) < 20):
                 print(f'--Val Batch {i+1}/{len(dataloader_val)}')
-            x, y = extract_batch(batch)
+            x = x.float().to(device)
+            y = y.long().to(device)
             output = model(x)
-            loss = loss_function(output, y)
+            loss = F.cross_entropy(output, y)
             total_val_loss += loss.item()
     
         # Save model if validation loss is lower
@@ -149,10 +118,10 @@ def train_model(model, datasets, savepath,
         
         # Plot images
         if plot:
-            x, y = extract_batch(next(iter(dataloader_train)))
-            z = model(x)
-            if segmentation:
-                z = model(x).argmax(dim=1)
+            x, y = next(iter(dataloader_train))
+            x = x.float().to(device)
+            y = y.long().to(device)
+            z = model(x).argmax(dim=1)
             plot_images(Images=x[:5], Predictions=z[:5], Targets=y[:5])
             plt.pause(1)
 

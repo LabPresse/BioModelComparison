@@ -3,52 +3,55 @@
 import math
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
-# Define transformer block
-class TransformerBlock(nn.Module):
-    def __init__(self, n_features, n_heads=8, mlp_ratio=1.5):
-        super(TransformerBlock, self).__init__()
+# Define Mamba block
+class MambaBlock(nn.Module):
+    def __init__(self, n_features, n_states):
+        super(MambaBlock, self).__init__()
 
-        # Set up attributes
+        # Set attributes
         self.n_features = n_features
-        self.n_heads = n_heads
-        self.mlp_ratio = mlp_ratio
+        self.n_states = n_states
 
-        # Set up multi-head self-attention
-        self.self_attn = nn.MultiheadAttention(n_features, n_heads, batch_first=True)
-
-        # Set up feedforward layer
-        self.mlp = nn.Sequential(
-            nn.Linear(n_features, int(n_features * mlp_ratio)),
-            nn.ReLU(),
-            nn.Linear(int(n_features * mlp_ratio), n_features),
-        )
-
-        # Set up normalization layers
-        self.norm1 = nn.LayerNorm(n_features)
-        self.norm2 = nn.LayerNorm(n_features)
+        # Set up layers
+        self.linear1 = nn.Linear(n_features, n_features)
+        self.state_space = nn.Parameter(torch.randn(n_features, n_states))
+        self.linear2 = nn.Linear(n_states, n_features)
 
     def forward(self, x):
 
-        # Apply self-attention
-        attn_output, _ = self.self_attn(self.norm1(x), self.norm1(x), self.norm1(x))
-        x = x + attn_output
+        # Save original input for skip connection
+        x0 = x
 
-        # Feedforward layer
-        x = x + self.mlp(self.norm2(x))
+        # Apply a linear transformation
+        x = self.linear1(x)
 
+        # Apply nonlinearity
+        x = F.relu(x)
+
+        # Selective state space interaction
+        x = torch.einsum('bij,jk->bik', x, self.state_space)
+
+        # Another linear transformation to restore dimensionality
+        x = self.linear2(x)
+
+        # Add skip connection
+        x += x0
+
+        # Return x
         return x
 
 
-# Define vision transformer class
-class VisionTransformer(nn.Module):
+# Define Mamba class
+class VisionMamba(nn.Module):
     def __init__(self, 
             img_size, in_channels, out_channels,
-            n_layers=8, n_features=64,
+            n_layers=8, n_states=64, n_features=64,
             patch_size=8, **kwargs
         ):
-        super(VisionTransformer, self).__init__()
+        super(VisionMamba, self).__init__()
 
         # Set attributes
         self.img_size = img_size
@@ -56,6 +59,7 @@ class VisionTransformer(nn.Module):
         self.out_channels = out_channels
         self.patch_size = patch_size
         self.n_layers = n_layers
+        self.n_states = n_states
         self.n_features = n_features
 
         # Calculate constants
@@ -78,10 +82,10 @@ class VisionTransformer(nn.Module):
             nn.Conv2d(in_channels, n_features, kernel_size=patch_size, stride=patch_size),
         )
 
-        # Set up transformer blocks
-        self.transformer_blocks = nn.ModuleList()
+        # Set up mamba blocks
+        self.mamba_blocks = nn.ModuleList()
         for i in range(n_layers):
-            self.transformer_blocks.append(TransformerBlock(n_features, **kwargs))
+            self.mamba_blocks.append(MambaBlock(n_features, n_states, **kwargs))
 
         # Patch expansion
         self.patch_expansion = nn.Sequential(
@@ -105,7 +109,7 @@ class VisionTransformer(nn.Module):
         x = x + self.pos_embed
 
         # Apply transformer blocks
-        for block in self.transformer_blocks:
+        for block in self.mamba_blocks:
             x = block(x)
         
         # Convert patch embeddings to image
@@ -117,11 +121,12 @@ class VisionTransformer(nn.Module):
         return x
 
 
+
 # Test model
 if __name__ == '__main__':
     
     # Set up model
-    model = VisionTransformer(128, 3, 1, n_layers=16, n_features=64)
+    model = VisionMamba(128, 3, 1, n_layers=16, n_features=64)
 
     # Print number of parameters
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))
@@ -135,3 +140,4 @@ if __name__ == '__main__':
     # Print output shape
     print(y.shape)
         
+
