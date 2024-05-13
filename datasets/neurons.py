@@ -28,7 +28,7 @@ class NeuronsDataset(Dataset):
             )
 
         # Set up root directory
-        self.root = os.path.join('data/neurons')
+        self.root = os.path.join('datasets/neurons')
 
         # Get files
         self.files = os.listdir(os.path.join(self.root, 'images'))

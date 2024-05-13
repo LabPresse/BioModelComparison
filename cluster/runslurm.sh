@@ -14,8 +14,8 @@ printf "#!/bin/bash
 #SBATCH --partition=general
 #SBATCH -D /home/jsbryan4/BioModelComparison/
 #SBATCH -t 7-00:00:00
-#SBATCH -o cluster/.slurmjobs/job$i.out
-#SBATCH -e cluster/.slurmjobs/job$i.err
+#SBATCH -o cluster/slurmjobs/job$i.out
+#SBATCH -e cluster/slurmjobs/job$i.err
 #SBATCH -c 1
 #SBATCH -N 1 
 #SBATCH --mem=10G
@@ -23,10 +23,10 @@ printf "#!/bin/bash
 module load mamba
 source activate myenv
 
-python -u main.py $i
+python -u cluster/main.py $i
 
-" > ".slurmjobs/job$i.sh"
+" > "cluster/slurmjobs/job$i.sh"
 
-sbatch ".slurmjobs/job$i.sh"
+sbatch "cluster/slurmjobs/job$i.sh"
 
 done

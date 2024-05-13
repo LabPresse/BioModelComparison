@@ -28,7 +28,7 @@ class RetinaDataset(Dataset):
             )
 
         # Set up root directory
-        self.root = os.path.join('data/retinas')
+        self.root = os.path.join('datasets/retinas')
 
         # Get files
         self.files = os.listdir(os.path.join(self.root, 'images'))

@@ -15,9 +15,9 @@ from models.resnet import ResNet
 from models.vit import VisionTransformer
 from models.vim import VisionMamba
 # from models.resnet import ResNet
-from datasets.bdello import BdelloDataset
-from datasets.retinas import RetinaDataset
-from datasets.neurons import NeuronsDataset
+from data.bdello import BdelloDataset
+from data.retinas import RetinaDataset
+from data.neurons import NeuronsDataset
 from training import train_model
 from testing import evaluate_model
 

@@ -11,7 +11,7 @@ api = KaggleApi()
 api.authenticate()
 
 # Set base data directory
-root = './data'
+root = './datasets/'
 
 
 # Get retina dataset
