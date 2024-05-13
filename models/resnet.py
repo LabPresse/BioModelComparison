@@ -82,7 +82,7 @@ class ResNetBlock(nn.Module):
 class ResNet(nn.Module):
     def __init__(self,
             in_channels, out_channels,
-            n_blocks=3, n_features=8, n_layers_per_block=2,
+            n_blocks=3, n_features=4, n_layers_per_block=2,
         ):
         super(ResNet, self).__init__()
 

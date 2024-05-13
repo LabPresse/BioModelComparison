@@ -7,6 +7,9 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset, random_split
 
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Import local modules
 from helper_functions import plot_images, count_parameters, check_gradient, convert_to_serializable, get_savename
 from models.conv import ConvolutionalNet
@@ -24,13 +27,13 @@ from testing import evaluate_model
 
 # Set environment
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-outpath = 'outfiles'
+outpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outfiles')
 
 
 # Define training scheme function
 def run_training_scheme(
         modelID, dataID, savename,
-        ffcvID=0, img_size=256, n_epochs=50,
+        ffcvid=0, img_size=256, n_epochs=50,
         verbose=True, plot=False,
         **kwargs
     ):
@@ -56,8 +59,8 @@ def run_training_scheme(
         
     # Get 5-fold cross-validation split from ffcvID
     splits = random_split(dataset, [len(dataset) // 5] * 4 + [len(dataset) - 4 * (len(dataset) // 5)])
-    testID = ffcvID
-    valID = (ffcvID + 1) % 5
+    testID = ffcvid
+    valID = (ffcvid + 1) % 5
     trainIDs = [i for i in range(5) if i not in [testID, valID]]
     dataset_test = Subset(dataset, indices=splits[testID].indices)
     dataset_val = Subset(dataset, indices=splits[valID].indices)
@@ -105,6 +108,10 @@ def run_training_scheme(
 
     # Set up model
     model = model.to(device)
+
+    # # Print model parameters
+    # print(f'{savename}: {count_parameters(model)} parameters')
+    # return
 
     # Train model
     model, statistics = train_model(
@@ -171,6 +178,18 @@ if __name__ == "__main__":
                     ffcvid,
                 ))
     n_jobs = len(all_jobs)
+
+    # for jobID in range(n_jobs):
+    #     modelID, dataID, options, ffcvid = all_jobs[jobID]
+    #     savename = get_savename(modelID, dataID, options, ffcvid)
+    #     run_training_scheme(
+    #         modelID, 
+    #         dataID, 
+    #         savename,
+    #         ffcvid=ffcvid,
+    #         verbose=False,
+    #         **options
+    #     )
     
     # Get job id from sys
     jobID = 0
@@ -179,8 +198,6 @@ if __name__ == "__main__":
 
     # Get job parameters
     modelID, dataID, options, ffcvid = all_jobs[jobID]
-
-    # Configure savename
     savename = get_savename(modelID, dataID, options, ffcvid)
     
     # Run training scheme
