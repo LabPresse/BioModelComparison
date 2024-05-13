@@ -145,9 +145,9 @@ if __name__ == "__main__":
     datasets = ['retinas', 'neurons', 'bdello', ]
     model_options = [
         # ConvolutionalNet
+        ['conv', {'n_layers': 4}],
         ['conv', {'n_layers': 8}],
         ['conv', {'n_layers': 16}],
-        ['conv', {'n_layers': 32}],
         # UNet
         ['unet', {'n_blocks': 2}],
         ['unet', {'n_blocks': 3}],
