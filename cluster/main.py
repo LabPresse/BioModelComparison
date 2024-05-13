@@ -142,7 +142,7 @@ def run_training_scheme(
 if __name__ == "__main__":
         
     # Set up datasets, models, and options
-    datasets = ['bdello', 'retinas', 'neurons']
+    datasets = ['neurons', 'bdello', 'retinas']
     model_options = [
         # ConvolutionalNet
         ['conv', {'n_layers': 8}],
