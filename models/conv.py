@@ -28,15 +28,16 @@ class ConvolutionalNet(nn.Module):
         )
 
         # Set up layers
-        self.layers = nn.ModuleList()
+        layers = []
         for i in range(n_layers):
-            self.layers.append(
+            layers.append(
                 nn.Sequential(
                     nn.Conv2d(n_features, n_features, kernel_size=3, padding=1),
                     nn.InstanceNorm2d(n_features),
                     nn.ReLU(),
                 )
             )
+        self.layers = nn.Sequential(*layers)
 
         # Set up output block
         self.output_block = nn.Sequential(
@@ -50,8 +51,7 @@ class ConvolutionalNet(nn.Module):
         x = self.input_block(x)
 
         # Layers
-        for layer in self.layers:
-            x = layer(x)
+        x = self.layers(x)
 
         # Output block
         x = self.output_block(x)
