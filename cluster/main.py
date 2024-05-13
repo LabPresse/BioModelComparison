@@ -15,9 +15,9 @@ from models.resnet import ResNet
 from models.vit import VisionTransformer
 from models.vim import VisionMamba
 # from models.resnet import ResNet
-from data.bdello import BdelloDataset
-from data.retinas import RetinaDataset
-from data.neurons import NeuronsDataset
+from datasets.bdello import BdelloDataset
+from datasets.retinas import RetinaDataset
+from datasets.neurons import NeuronsDataset
 from training import train_model
 from testing import evaluate_model
 
@@ -153,10 +153,10 @@ if __name__ == "__main__":
         ['vit', {'img_size': 128, 'n_layers': 4}],
         ['vit', {'img_size': 128, 'n_layers': 8}],
         ['vit', {'img_size': 128, 'n_layers': 16}],
-        # VisionMamba
-        ['vim', {'img_size': 128, 'n_layers': 4}],
-        ['vim', {'img_size': 128, 'n_layers': 8}],
-        ['vim', {'img_size': 128, 'n_layers': 16}],
+        # # VisionMamba
+        # ['vim', {'img_size': 128, 'n_layers': 4}],
+        # ['vim', {'img_size': 128, 'n_layers': 8}],
+        # ['vim', {'img_size': 128, 'n_layers': 16}],
     ]
 
     # Set up all jobs

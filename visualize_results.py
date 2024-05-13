@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader
 
 # Import local modules
 from helper_functions import plot_images, plot_roc_curve, get_savename
-from data.bdello import BdelloDataset
-from data.retinas import RetinaDataset
-from data.neurons import NeuronsDataset
+from datasets.bdello import BdelloDataset
+from datasets.retinas import RetinaDataset
+from datasets.neurons import NeuronsDataset
 from models.conv import ConvolutionalNet
 from models.unet import UNet
 from models.resnet import ResNet

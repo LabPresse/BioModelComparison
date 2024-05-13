@@ -161,11 +161,8 @@ cython_debug/
 
 # Keep data directories, but ignore contents
 datasets/bdello/*
-!datasets/bdello/.gitkeep
 datasets/neurons/*
-!datasets/neurons/.gitkeep
 datasets/retinas/*
-!datasets/retinas/.gitkeep
 
 # Keep slurmjobs directory, but ignore contents
 cluster/slurmjobs/*
