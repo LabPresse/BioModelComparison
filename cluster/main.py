@@ -182,6 +182,7 @@ if __name__ == "__main__":
     # for jobID in range(n_jobs):
     #     modelID, dataID, options, ffcvid = all_jobs[jobID]
     #     savename = get_savename(modelID, dataID, options, ffcvid)
+    #     print(f'{jobID}: ', end='')
     #     run_training_scheme(
     #         modelID, 
     #         dataID, 
@@ -192,7 +193,7 @@ if __name__ == "__main__":
     #     )
     
     # Get job id from sys
-    jobID = 0
+    jobID = 100
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
@@ -206,6 +207,7 @@ if __name__ == "__main__":
         dataID, 
         savename,
         verbose=True,
+        n_epochs=1,  # Set to 50 for full training
         **options
     )
 

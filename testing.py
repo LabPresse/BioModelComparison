@@ -1,5 +1,6 @@
 
 # Import libraries
+import math
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
@@ -10,7 +11,7 @@ from helper_functions import plot_roc_curve
 
 
 # Define a function to evaluate a PyTorch model
-def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
+def evaluate_model(model, dataset, verbose=True, plot=False):
     """Evaluate a PyTorch model on a dataset."""
 
     ### EVALUATE THE MODEL ###
@@ -22,17 +23,28 @@ def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
     model.eval()
     device = next(model.parameters()).device
 
-    # Create lists to store true labels and predicted probabilities
+    # Set up the dataloader
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
+
+    # Determine downsample factor
+    n_images = len(dataloader)
+    n_pixels = math.prod(next(iter(dataloader))[0].shape)
+    n_samples = n_images * n_pixels
+    if n_samples > 100000:
+        n_samples_per_batch = 100000 // n_images
+    else:
+        n_samples_per_batch = n_pixels
+
+    # Create lists
     true_labels = []
     predicted_probs = []
+    predicted_labels = []
 
-    # Set up the dataloader
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     # Iterate over the dataloader
     for i, (x, y) in enumerate(dataloader):
-        if verbose and ((i % 10 == 0) or (len(dataloader) < 20)):
-            print(f'--Batch {i + 1}/{len(dataloader)}')
+        if verbose and (((i+1)%25==0) or (i==len(dataloader)-1) or (len(dataloader)<25)):
+            print(f'--Image {i + 1}/{len(dataloader)}')
 
         # Move the data to the device
         x = x.to(device)
@@ -40,15 +52,31 @@ def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
 
         # Forward pass through the model
         z = model(x)
-        probs = torch.softmax(z, dim=1)
 
-        # Append the predicted probabilities and true labels to the lists
-        predicted_probs.extend(probs.detach().numpy())
-        true_labels.extend(y.numpy())
+        # Get the predicted probabilities and labels
+        probs = torch.softmax(z, dim=1)
+        labels = torch.argmax(probs, dim=1)
+
+        # Flatten the data
+        trues = y.cpu().numpy().reshape(-1)
+        probs = probs[:, 1].cpu().detach().numpy().reshape(-1)
+        labels = labels.cpu().numpy().reshape(-1)
+
+        # Randomly sample the indices
+        indices = np.random.choice(len(trues), min(n_samples_per_batch, len(trues)), replace=False)
+        trues = trues[indices]
+        probs = probs[indices]
+        labels = labels[indices]
+
+        # Append results to lists
+        true_labels.extend(trues)
+        predicted_probs.extend(probs)
+        predicted_labels.extend(labels)
 
     # Convert the lists to numpy arrays
     true_labels = np.array(true_labels)
     predicted_probs = np.array(predicted_probs)
+    predicted_labels = np.array(predicted_labels)
 
 
     ### CALCULATE EVALUATION METRICS ###
@@ -56,10 +84,9 @@ def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
         print('Calculating evaluation metrics.')
 
     # Calculate the confusion matrix
-    predicted_labels = np.argmax(predicted_probs, axis=1)
     tn, fp, fn, tp = confusion_matrix(
-        true_labels.reshape(-1), 
-        predicted_labels.reshape(-1)
+        true_labels, 
+        predicted_labels,
     ).ravel()
 
     # Calculate sensitivity, specificity, and accuracy
@@ -75,12 +102,12 @@ def evaluate_model(model, dataset, batch_size=32, verbose=True, plot=False):
 
     # Calculate the ROC curve and AUC score
     roc_fpr, roc_tpr, roc_thresholds = roc_curve(
-        true_labels.reshape(-1),
-        np.round(predicted_probs[:, 1].reshape(-1), 3),  # Round input to avoid too many thresholds
+        true_labels, 
+        predicted_probs,
     )
     auc_score = roc_auc_score(
-        true_labels.reshape(-1),
-        np.round(predicted_probs[:, 1].reshape(-1), 3),  # Round input to avoid too many thresholds
+        true_labels, 
+        predicted_probs,
     )
 
     # Plot the ROC curve
