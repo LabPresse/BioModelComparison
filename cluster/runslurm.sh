@@ -4,7 +4,7 @@ num_jobs=$1
 
 echo "Submitting $num_jobs jobs"
 
-for (( i=0; i<=$num_jobs; i++ ))
+for (( i=0; i<$num_jobs; i++ ))
 do
 echo "   -$((i+1))/$num_jobs"
 
