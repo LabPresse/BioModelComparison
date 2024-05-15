@@ -109,7 +109,7 @@ def train_model(
 
         # Print status
         if verbose:
-            status = '::' + '::\n'.join([
+            status = ':::' + '\n:::'.join([
                 f'Train loss: {total_train_loss:.4e}',
                 f'Val loss: {total_val_loss:.4e}',
                 f'Time: {time.time()-t:.2f} sec.'

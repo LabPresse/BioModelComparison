@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+#TODO: Add in RNN structure
 
 # Define Mamba block
 class MambaBlock(nn.Module):

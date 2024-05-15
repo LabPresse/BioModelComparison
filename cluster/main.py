@@ -30,10 +30,31 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 outpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outfiles')
 
 
+# Define get model function
+def get_model(modelID, img_size=None, scale=None, **kwargs):
+    """Get a model with given options."""
+    if modelID == 'conv':
+        # ConvolutionalNet
+        model = ConvolutionalNet(**kwargs)
+    elif modelID == 'unet':
+        # UNet
+        model = UNet(**kwargs)
+    elif modelID == 'resnet':
+        # ResNet
+        model = ResNet(**kwargs)
+    elif modelID == 'vit':
+        # VisionTransformer
+        model = VisionTransformer(img_size=img_size, **kwargs)
+    elif modelID == 'vim':
+        # VisionMamba
+        model = VisionMamba(img_size=img_size, **kwargs)
+    return model
+
+
 # Define training scheme function
 def run_training_scheme(
         modelID, dataID, savename,
-        ffcvid=0, img_size=256, n_epochs=50,
+        img_size=256, scale=2, ffcvid=0, n_epochs=20,
         verbose=True, plot=False,
         **kwargs
     ):
@@ -44,20 +65,24 @@ def run_training_scheme(
         print(f'Starting training scheme: {savename}')
 
     # Get dataset
+    if verbose:
+        print('Loading dataset.')
     if dataID == 'bdello':
-        dataset = BdelloDataset(crop=(img_size, img_size), scale=2)
+        dataset = BdelloDataset(crop=(img_size, img_size), scale=scale)
         in_channels = 1
         out_channels = 2
     elif dataID == 'retinas':
-        dataset = RetinaDataset(crop=(img_size, img_size), scale=2)
+        dataset = RetinaDataset(crop=(img_size, img_size), scale=scale)
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
-        dataset = NeuronsDataset(crop=(img_size, img_size), scale=2)
+        dataset = NeuronsDataset(crop=(img_size, img_size), scale=scale)
         in_channels = 3
         out_channels = 2
         
     # Get 5-fold cross-validation split from ffcvID
+    if verbose:
+        print('Splitting dataset.')
     splits = random_split(dataset, [len(dataset) // 5] * 4 + [len(dataset) - 4 * (len(dataset) // 5)])
     testID = ffcvid
     valID = (ffcvid + 1) % 5
@@ -67,53 +92,21 @@ def run_training_scheme(
     dataset_train = Subset(dataset, indices=[idx for i in trainIDs for idx in splits[i].indices])
     datasets = (dataset_train, dataset_val, dataset_test)
 
-    # Get model
-    if modelID == 'conv':
-        # ConvolutionalNet
-        model = ConvolutionalNet(
-            in_channels=in_channels, 
-            out_channels=out_channels,
-            **kwargs
-        )
-    elif modelID == 'unet':
-        # UNet
-        model = UNet(
-            in_channels=in_channels, 
-            out_channels=out_channels,
-            **kwargs
-        )
-    elif modelID == 'resnet':
-        # ResNet
-        model = ResNet(
-            in_channels=in_channels, 
-            out_channels=out_channels,
-            **kwargs
-        )
-    elif modelID == 'vit':
-        # VisionTransformer
-        model = VisionTransformer(
-            img_size=img_size, 
-            in_channels=in_channels, 
-            out_channels=out_channels,
-            **kwargs
-        )
-    elif modelID == 'vim':
-        # VisionMamba
-        model = VisionMamba(
-            img_size=img_size, 
-            in_channels=in_channels, 
-            out_channels=out_channels,
-            **kwargs
-        )
-
     # Set up model
+    if verbose:
+        print('Setting up model.')
+    model = get_model(
+        modelID,
+        img_size=img_size, 
+        in_channels=in_channels,
+        out_channels=out_channels,
+        **kwargs
+    )
     model = model.to(device)
 
-    # # Print model parameters
-    # print(f'{savename}: {count_parameters(model)} parameters')
-    # return
-
     # Train model
+    if verbose:
+        print('Training model.')
     model, statistics = train_model(
         model, datasets, os.path.join(outpath, f'{savename}.pth'),
         verbose=verbose, plot=plot,
@@ -138,6 +131,50 @@ def run_training_scheme(
     return
 
 
+# Define look at jobs function for debugging
+def look_at_jobs(jobs):
+    """Print out information about jobs."""
+
+    # Loop over jobs
+    for jobID in range(len(jobs)):
+
+        # Get job parameters
+        modelID, dataID, options, ffcvid = jobs[jobID]
+        img_size = options.get('img_size', 256)
+        scale = options.get('scale', 2)
+
+        # Get dataset
+        if dataID == 'bdello':
+            dataset = BdelloDataset(crop=(img_size, img_size), scale=scale)
+            in_channels = 1
+            out_channels = 2
+        elif dataID == 'retinas':
+            dataset = RetinaDataset(crop=(img_size, img_size), scale=scale)
+            in_channels = 3
+            out_channels = 2
+        elif dataID == 'neurons':
+            dataset = NeuronsDataset(crop=(img_size, img_size), scale=scale)
+            in_channels = 3
+            out_channels = 2
+        
+        # Get save name
+        savename = get_savename(modelID, dataID, options, ffcvid)
+
+        # Get model
+        model = get_model(
+            modelID, 
+            in_channels=in_channels,
+            out_channels=out_channels,
+            **options
+        )
+
+        # Print number of parameters
+        print(f'{savename}\n--{len(dataset)}\n--{count_parameters(model)}')
+        # print(f'{int(.6 * len(dataset)) // 32}')
+    
+    # Done
+    return
+
 # Run training scheme
 if __name__ == "__main__":
         
@@ -157,43 +194,48 @@ if __name__ == "__main__":
         ['resnet', {'n_blocks': 3}],
         ['resnet', {'n_blocks': 4}],
         # VisionTransformer
-        ['vit', {'img_size': 128, 'n_layers': 4}],
-        ['vit', {'img_size': 128, 'n_layers': 8}],
-        ['vit', {'img_size': 128, 'n_layers': 16}],
+        ['vit', {'n_layers': 4}],
+        ['vit', {'n_layers': 8}],
+        ['vit', {'n_layers': 16}],
         # # VisionMamba
-        # ['vim', {'img_size': 128, 'n_layers': 4}],
-        # ['vim', {'img_size': 128, 'n_layers': 8}],
-        # ['vim', {'img_size': 128, 'n_layers': 16}],
+        # ['vim', {'n_layers': 4}],
+        # ['vim', {'n_layers': 8}],
+        # ['vim', {'n_layers': 16}],
     ]
 
     # Set up all jobs
     all_jobs = []
-    for ffcvid in range(5):
-        for dataID in datasets:
-            for modelID, options in model_options:
-                all_jobs.append((
-                    modelID, 
-                    dataID, 
-                    options,
-                    ffcvid,
-                ))
-    n_jobs = len(all_jobs)
+    for ffcvid in range(5):                         # 5-fold cross-validation
+        for dataID in datasets:                     # Datasets
+            for modelID, options in model_options:  # Models
 
-    # for jobID in range(n_jobs):
-    #     modelID, dataID, options, ffcvid = all_jobs[jobID]
-    #     savename = get_savename(modelID, dataID, options, ffcvid)
-    #     print(f'{jobID}: ', end='')
-    #     run_training_scheme(
-    #         modelID, 
-    #         dataID, 
-    #         savename,
-    #         ffcvid=ffcvid,
-    #         verbose=False,
-    #         **options
-    #     )
+                # Set scale
+                if dataID == 'retinas':
+                    scale = 2
+                elif dataID == 'bdello':
+                    scale = 2
+                elif dataID == 'neurons':
+                    scale = 1
+                    
+                # Set image size
+                if modelID == 'vit' or modelID == 'vim':
+                    # Use smaller image for memory-intensive models
+                    img_size = 128
+                    scale *= 2
+                else:
+                    img_size = 256
+
+                # Update options
+                options = {**options, 'img_size': img_size, 'scale': scale}
+
+                # Add job
+                all_jobs.append((modelID, dataID, options, ffcvid))
+
+    # # Look at jobs
+    # look_at_jobs(all_jobs)
     
     # Get job id from sys
-    jobID = 100
+    jobID = 0
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 

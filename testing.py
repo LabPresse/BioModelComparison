@@ -31,19 +31,18 @@ def evaluate_model(model, dataset, verbose=True, plot=False):
     n_pixels = math.prod(next(iter(dataloader))[0].shape)
     n_samples = n_images * n_pixels
     if n_samples > 100000:
-        n_samples_per_batch = 100000 // n_images
+        n_samples_per_img = 100000 // n_images
     else:
-        n_samples_per_batch = n_pixels
+        n_samples_per_img = n_pixels
 
     # Create lists
     true_labels = []
     predicted_probs = []
     predicted_labels = []
 
-
     # Iterate over the dataloader
     for i, (x, y) in enumerate(dataloader):
-        if verbose and (((i+1)%25==0) or (i==len(dataloader)-1) or (len(dataloader)<25)):
+        if verbose and (((i+1)%100==0) or (i==len(dataloader)-1) or (len(dataloader)<20)):
             print(f'--Image {i + 1}/{len(dataloader)}')
 
         # Move the data to the device
@@ -63,7 +62,7 @@ def evaluate_model(model, dataset, verbose=True, plot=False):
         labels = labels.cpu().numpy().reshape(-1)
 
         # Randomly sample the indices
-        indices = np.random.choice(len(trues), min(n_samples_per_batch, len(trues)), replace=False)
+        indices = np.random.choice(len(trues), min(n_samples_per_img, len(trues)), replace=False)
         trues = trues[indices]
         probs = probs[indices]
         labels = labels[indices]

@@ -23,7 +23,7 @@ class ConvolutionalNet(nn.Module):
 
         # Set up input block
         self.input_block = nn.Sequential(
-            nn.InstanceNorm2d(in_channels),  # Normalize input
+            nn.GroupNorm(1, in_channels, affine=False),  # Normalize input
             nn.Conv2d(in_channels, n_features, kernel_size=3, padding=1),
         )
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
     # Set up input tensor
-    x = torch.randn(1, 3, 256, 256)
+    x = torch.randn(32, 3, 256, 256)
 
     # Test model
     y = model(x)

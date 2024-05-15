@@ -24,7 +24,7 @@ class UNet(nn.Module):
 
         # Set up input block
         self.input_block = nn.Sequential(
-            nn.InstanceNorm2d(in_channels),  # Normalize input
+            nn.GroupNorm(1, in_channels, affine=False),  # Normalize input
             nn.Conv2d(in_channels, n_features, kernel_size=3, padding=1),
         )
 
