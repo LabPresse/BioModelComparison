@@ -18,11 +18,12 @@ from models.resnet import ResNet
 from models.vit import VisionTransformer
 
 # Set environment
-root = 'outfiles/'
+root = 'cluster/outfiles/'
+figpath = 'figures/'
 
 
 # Plot ROC curves
-def plot_roc_curves(dataset, model_options):
+def plot_roc_curves(basenames):
 
     # Set up plot
     fig, ax = plt.subplots(1, 1, squeeze=False)
@@ -30,30 +31,48 @@ def plot_roc_curves(dataset, model_options):
     plt.show()
 
     # Make list of colors the same length as model_options
-    colors = plt.cm.viridis(np.linspace(0, 1, len(model_options)))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(basenames)))
 
     # Loop over models and options
-    for i, (model, options) in enumerate(model_options):
+    for i, basename in enumerate(basenames):
+
+        # Get avg stats
+        auc_avg = 0
+        acc_avg = 0
+        sens_avg = 0
+        spec_avg = 0
+        for ffcvid in range(5):
+            savename = basename + f'_ffcv={ffcvid}'
+            with open(os.path.join(root, f'{savename}.json'), 'r') as f:
+                statistics = json.load(f)
+            auc_avg += statistics['test_metrics']['auc_score'] / 5
+            acc_avg += statistics['test_metrics']['accuracy'] / 5
+            sens_avg += statistics['test_metrics']['sensitivity'] / 5
+            spec_avg += statistics['test_metrics']['specificity'] / 5
+
+
         # Loop over ffcv splits
         for ffcvid in range(5):
 
             # Load statistics
-            savename = get_savename(model, dataset, options, ffcvid)
+            savename = basename + f'_ffcv={ffcvid}'
             with open(os.path.join(root, f'{savename}.json'), 'r') as f:
                 statistics = json.load(f)
 
             # Get metrics
             fpr = statistics['test_metrics']['roc_fpr']
             tpr = statistics['test_metrics']['roc_tpr']
-            auc = statistics['test_metrics']['auc_score']
-            accuracy = statistics['test_metrics']['accuracy']
-            specificity = statistics['test_metrics']['specificity']
-            sensitivity = statistics['test_metrics']['sensitivity']
 
             # Set label
             label = (
                 ('_' if ffcvid != 0 else '')
-                + f'{model}; AUC={auc:.3e}; Acc={accuracy:.3e}\nSens={sensitivity:.3e}; Spec={specificity:.3e}'
+                + f'{basename}\n'
+                + '; '.join([
+                    f'AUC={auc_avg:.3f}',
+                    f'Acc={acc_avg:.3f}',
+                    f'Sens={sens_avg:.3f}',
+                    f'Spec={spec_avg:.5f}'
+                ])
             )
 
             # Plot ROC curve
@@ -71,7 +90,7 @@ def plot_roc_curves(dataset, model_options):
 
 
 # Plot loss
-def plot_losses(dataset, model_options):
+def plot_losses(basenames):
 
     # Set up plot
     fig, ax = plt.subplots(2, 1, squeeze=False, sharex=True)
@@ -79,20 +98,20 @@ def plot_losses(dataset, model_options):
     plt.show()
 
     # Make list of colors the same length as model_options
-    colors = plt.cm.viridis(np.linspace(0, 1, len(model_options)))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(basenames)))
 
     # Loop over models and options
-    for i, (model, options) in enumerate(model_options):
+    for i, basename in enumerate(basenames):
         # Loop over ffcv splits
         for ffcvid in range(5):
 
             # Load statistics
-            savename = get_savename(model, dataset, options, ffcvid)
+            savename = basename + f'_ffcv={ffcvid}'
             with open(os.path.join(root, f'{savename}.json'), 'r') as f:
                 statistics = json.load(f)
 
             # Plot training and validation losses
-            label = ('_' if ffcvid != 0 else '') + f'{model}'
+            label = ('_' if ffcvid != 0 else '') + f'{basename}'
             ax[0, 0].plot(statistics['train_losses'], label=label, color=colors[i])
             ax[1, 0].plot(statistics['val_losses'], label=label, color=colors[i])
 
@@ -109,7 +128,7 @@ def plot_losses(dataset, model_options):
 
 
 # Plot outputs
-def plot_outputs(datasetID, model_options, n_images=5):
+def plot_outputs(datasetID, basenames, n_images=5):
 
     # Get dataset
     if datasetID == 'bdello':
@@ -117,46 +136,46 @@ def plot_outputs(datasetID, model_options, n_images=5):
     elif datasetID == 'retinas':
         dataset = RetinaDataset(crop=(256, 256), scale=2)
     elif datasetID == 'neurons':
-        dataset = NeuronsDataset(crop=(256, 256), scale=2)
+        dataset = NeuronsDataset(crop=(256, 256), scale=1)
     else:
         raise ValueError('Invalid dataset.')
 
     # Get batch
     dataloader = DataLoader(dataset, batch_size=n_images, shuffle=True)
     x, y = next(iter(dataloader))
+    in_channels = x.shape[1]
+    out_channels = 2
 
     # Loop over models and options
     zs = {}
-    for i, (modelID, options) in enumerate(model_options):
+    for i, basename in enumerate(basenames):
+
+        # Get modelID
+        modelID = basename.split('_')[0]
         
         # Load model
-        ops = options.copy()
-        if 'pretrain' in ops:
-            del ops['pretrain']
-        if modelID == 'conv':
-            model = ConvolutionalNet(in_channels=3, out_channels=2, **ops)
-        elif modelID == 'unet':
-            model = UNet(in_channels=3, out_channels=2, **ops)
-        elif modelID == 'resnet':
-            model = ResNet(in_channels=3, out_channels=2, **ops)
-        elif modelID == 'vit':
-            model = VisionTransformer(in_channels=3, out_channels=2, **ops)
+        if 'conv' in basename:
+            n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
+            model = ConvolutionalNet(in_channels=in_channels, out_channels=out_channels, n_layers=n_layers)
+        elif 'unet' in basename:
+            n_blocks = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
+            model = UNet(in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks)
+        elif 'resnet' in basename:
+            n_blocks = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
+            model = ResNet(in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks)
+        elif 'vit' in basename or 'vim' in basename:
+            n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
+            model = VisionTransformer(img_size=128, in_channels=in_channels, out_channels=out_channels, n_layers=n_layers)
 
         # Load model
-        savename = get_savename(modelID, datasetID, options, 0)
+        savename = f'{basename}_ffcv=0'
         model.load_state_dict(torch.load(os.path.join(root, f'{savename}.pth')))
         model.eval()
         
         # Get predictions
-        if modelID == 'vit':
-            # If vit, split image into 4 quarters, predict then merge
-            z0 = model(x[:, :, :128, :128]).detach().cpu().numpy().argmax(axis=1)
-            z1 = model(x[:, :, 128:, :128]).detach().cpu().numpy().argmax(axis=1)
-            z2 = model(x[:, :, :128, 128:]).detach().cpu().numpy().argmax(axis=1)
-            z3 = model(x[:, :, 128:, 128:]).detach().cpu().numpy().argmax(axis=1)
-            z01 = np.concatenate((z0, z1), axis=1)
-            z23 = np.concatenate((z2, z3), axis=1)
-            z = np.concatenate((z01, z23), axis=2)
+        if modelID == 'vit' or modelID == 'vim':
+            # If vit or vim, downsample images
+            x = x[:, :, ::2, ::2]
         else:
             z = model(x).detach().cpu().numpy().argmax(axis=1)
         zs[modelID] = z
@@ -167,46 +186,62 @@ def plot_outputs(datasetID, model_options, n_images=5):
     # Return figure and axes
     return fig, ax
 
-# Main
-if __name__ == '__main__':
-    
-    # Set up datasets, models, and options
-    model_options = [
-        # ConvolutionalNet
-        # ['conv', {'pretrain': False, 'n_layers': 8, 'activation': 'relu'}],
-        ['conv', {'pretrain': False, 'n_layers': 16, 'activation': 'relu'}],
-        # ['conv', {'pretrain': False, 'n_layers': 32, 'activation': 'relu'}],
-        # ['conv', {'pretrain': False, 'n_layers': 8, 'activation': 'gelu'}],
-        # ['conv', {'pretrain': False, 'n_layers': 16, 'activation': 'gelu'}],
-        # ['conv', {'pretrain': False, 'n_layers': 32, 'activation': 'gelu'}],
-        # # VisionTransformer
-        ['vit', {'pretrain': False, 'img_size': 128, 'n_layers': 8, 'n_features': 64}],
-        # ['vit', {'pretrain': False, 'img_size': 128, 'n_layers': 16, 'n_features': 64}],
-        # ['vit', {'pretrain': False, 'img_size': 128, 'n_layers': 32, 'n_features': 64}],
-        # ['vit', {'pretrain': False, 'img_size': 128, 'n_layers': 16, 'n_features': 32}],
-        # ['vit', {'pretrain': False, 'img_size': 128, 'n_layers': 16, 'n_features': 128}],
-        # ['vit', {'pretrain': False, 'img_size': 128, 'n_layers': 16, 'n_features': 64, 'use_cls_token': False}],
-        # # UNet
-        # ['unet', {'pretrain': False'n_blocks': 2, 'n_layers_per_block': 4}],
-        ['unet', {'pretrain': False, 'n_blocks': 3, 'n_layers_per_block': 4}],
-        # ['unet', {'pretrain': False, 'n_blocks': 4, 'n_layers_per_block': 4}],
-        # ['unet', {'pretrain': False, 'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1}],
-        # ['unet', {'pretrain': False, 'n_blocks': 3, 'n_layers_per_block': 4, 'expansion': 1}],
-        # ['unet', {'pretrain': False, 'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 1}],
-        # # ResNet
-        ['resnet', {'pretrain': False, 'n_blocks': 2, 'n_layers_per_block': 4, 'expansion': 1, 'bottleneck': False}],
-        # ['resnet', {'pretrain': False, 'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 1, 'bottleneck': False}],
-        # ['resnet', {'pretrain': False, 'n_blocks': 2, 'n_layers_per_block': 16, 'expansion': 1, 'bottleneck': False}],
-        # ['resnet', {'pretrain': False, 'n_blocks': 2, 'n_layers_per_block': 8, 'expansion': 2, 'bottleneck': True}],
-        # ['resnet', {'pretrain': False, 'n_blocks': 4, 'n_layers_per_block': 4, 'expansion': 2, 'bottleneck': True}],
-        # ['resnet', {'pretrain': False, 'n_blocks': 6, 'n_layers_per_block': 2, 'expansion': 2, 'bottleneck': True}],
-    ]
-    
-    # Plot loss
-    dataset = 'neurons'
-    # fig0, ax0 = plot_losses(dataset, model_options)
-    fig1, ax1 = plot_roc_curves(dataset, model_options)
-    # fig2, ax2 = plot_outputs(dataset, model_options)
+
+# Run training scheme
+if __name__ == "__main__":
+
+    # Set up constants
+    datasets = ['bdello', 'retinas', 'neurons']
+    models = ['conv', 'unet', 'resnet', 'vit']
+
+    # Set up basenames for all jobs
+    basenames = [f[:-5] for f in os.listdir(root) if f.endswith('.json')]
+    basenames = [f[:-7] for f in basenames if f.endswith('ffcv=0')]
+
+    # Set up best models
+    best_params = {
+        'conv': 'n_layers=8',
+        'unet': 'n_blocks=3',
+        'resnet': 'n_blocks=3',
+        'vit': 'n_layers=8',
+    }
+    best_basenames = []
+    for modelID in models:
+        best_basenames += [f for f in basenames if modelID in f and best_params[modelID] in f]
+
+
+    # Loop over datasets
+    for datasetID in datasets:
+
+        # Get basenames for dataset
+        basenames_dataset = [f for f in basenames if datasetID in f]
+        best_basenames_dataset = [f for f in best_basenames if datasetID in f]
+
+        # Plot ROC curves and losses for different params of each model
+        for modelID in models:
+
+            # Get models for dataset
+            basenames_dataset_model = sorted([f for f in basenames_dataset if modelID in f])
+
+            # Plot ROC curves
+            fig, ax = plot_roc_curves(basenames_dataset_model)
+            fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_roc.png'))
+
+            # Plot losses
+            fig, ax = plot_losses(basenames_dataset_model)
+            fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_losses.png'))
+
+        # Plot ROC curves for best models
+        fig, ax = plot_roc_curves(best_basenames_dataset)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_roc.png'))
+
+        # Plot losses for best models
+        fig, ax = plot_losses(best_basenames_dataset)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_losses.png'))
+
+        # Plot outputs for best models
+        fig, ax = plot_outputs(datasetID, best_basenames_dataset)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
 
     # Done
     print('Done.')

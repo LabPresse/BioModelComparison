@@ -171,3 +171,7 @@ cluster/slurmjobs/*
 # Keep outfiles directory, but ignore contents
 cluster/outfiles/*
 !cluster/outfiles/.gitkeep
+
+# Keep figures directory, but ignore contents
+figures/*
+!figures/.gitkeep
