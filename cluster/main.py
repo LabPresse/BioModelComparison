@@ -30,31 +30,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 outpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outfiles')
 
 
-# Define get model function
-def get_model(modelID, img_size=None, scale=None, **kwargs):
-    """Get a model with given options."""
-    if modelID == 'conv':
-        # ConvolutionalNet
-        model = ConvolutionalNet(**kwargs)
-    elif modelID == 'unet':
-        # UNet
-        model = UNet(**kwargs)
-    elif modelID == 'resnet':
-        # ResNet
-        model = ResNet(**kwargs)
-    elif modelID == 'vit':
-        # VisionTransformer
-        model = VisionTransformer(img_size=img_size, **kwargs)
-    elif modelID == 'vim':
-        # VisionMamba
-        model = VisionMamba(img_size=img_size, **kwargs)
-    return model
-
-
 # Define training scheme function
 def run_training_scheme(
-        modelID, dataID, savename,
-        img_size=256, scale=2, ffcvid=0, n_epochs=20,
+        modelID, dataID, savename, 
+        pretrain=True, ffcvid=0, n_epochs=20,
         verbose=True, plot=False,
         **kwargs
     ):
@@ -68,17 +47,50 @@ def run_training_scheme(
     if verbose:
         print('Loading dataset.')
     if dataID == 'bdello':
-        dataset = BdelloDataset(crop=(img_size, img_size), scale=scale)
+        dataset = BdelloDataset(crop=(128, 128), scale=4)
         in_channels = 1
         out_channels = 2
     elif dataID == 'retinas':
-        dataset = RetinaDataset(crop=(img_size, img_size), scale=scale)
+        dataset = RetinaDataset(crop=(128, 128), scale=4)
+        dataset = RetinaDataset(crop=(64, 64), scale=32)  # TODO: DELETE
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
-        dataset = NeuronsDataset(crop=(img_size, img_size), scale=scale)
+        dataset = NeuronsDataset(crop=(128, 128), scale=2)
         in_channels = 3
         out_channels = 2
+
+    # Get model
+    if verbose:
+        print('Setting up model.')
+    if modelID == 'conv':
+        # ConvolutionalNet
+        model = ConvolutionalNet(
+            in_channels=in_channels, out_channels=out_channels, **kwargs
+        )
+    elif modelID == 'unet':
+        # UNet
+        model = UNet(
+            in_channels=in_channels, out_channels=out_channels, **kwargs
+        )
+    elif modelID == 'resnet':
+        # ResNet
+        model = ResNet(
+            in_channels=in_channels, out_channels=out_channels, **kwargs
+        )
+    elif modelID == 'vit':
+        # VisionTransformer
+        model = VisionTransformer(
+            img_size=128,
+            in_channels=in_channels, out_channels=out_channels, **kwargs
+        )
+    elif modelID == 'vim':
+        # VisionMamba
+        model = VisionMamba(
+            img_size=128,
+            in_channels=in_channels, out_channels=out_channels, **kwargs
+        )
+    model = model.to(device)
         
     # Get 5-fold cross-validation split from ffcvID
     if verbose:
@@ -92,25 +104,26 @@ def run_training_scheme(
     dataset_train = Subset(dataset, indices=[idx for i in trainIDs for idx in splits[i].indices])
     datasets = (dataset_train, dataset_val, dataset_test)
 
-    # Set up model
-    if verbose:
-        print('Setting up model.')
-    model = get_model(
-        modelID,
-        img_size=img_size, 
-        in_channels=in_channels,
-        out_channels=out_channels,
-        **kwargs
-    )
-    model = model.to(device)
+    # Pretrain model
+    if pretrain:
+        if verbose:
+            print('Pretraining model as autoencoder.')
+        model.set_output_block(in_channels)
+        model, _ = train_model(
+            model, datasets, os.path.join(outpath, f'{savename}.pth'),
+            n_epochs=n_epochs, segmentation=False, autoencoder=True,
+            verbose=verbose, plot=plot,
+            
+        )
+        model.set_output_block(out_channels)
 
     # Train model
     if verbose:
         print('Training model.')
     model, statistics = train_model(
         model, datasets, os.path.join(outpath, f'{savename}.pth'),
-        verbose=verbose, plot=plot,
         n_epochs=n_epochs,
+        verbose=verbose, plot=plot,
     )
 
     # Test model
@@ -130,50 +143,6 @@ def run_training_scheme(
         print('Finished training scheme.')
     return
 
-
-# Define look at jobs function for debugging
-def look_at_jobs(jobs):
-    """Print out information about jobs."""
-
-    # Loop over jobs
-    for jobID in range(len(jobs)):
-
-        # Get job parameters
-        modelID, dataID, options, ffcvid = jobs[jobID]
-        img_size = options.get('img_size', 256)
-        scale = options.get('scale', 2)
-
-        # Get dataset
-        if dataID == 'bdello':
-            dataset = BdelloDataset(crop=(img_size, img_size), scale=scale)
-            in_channels = 1
-            out_channels = 2
-        elif dataID == 'retinas':
-            dataset = RetinaDataset(crop=(img_size, img_size), scale=scale)
-            in_channels = 3
-            out_channels = 2
-        elif dataID == 'neurons':
-            dataset = NeuronsDataset(crop=(img_size, img_size), scale=scale)
-            in_channels = 3
-            out_channels = 2
-        
-        # Get save name
-        savename = get_savename(modelID, dataID, options, ffcvid)
-
-        # Get model
-        model = get_model(
-            modelID, 
-            in_channels=in_channels,
-            out_channels=out_channels,
-            **options
-        )
-
-        # Print number of parameters
-        print(f'{savename}\n--{len(dataset)}\n--{count_parameters(model)}')
-        # print(f'{int(.6 * len(dataset)) // 32}')
-    
-    # Done
-    return
 
 # Run training scheme
 if __name__ == "__main__":
@@ -205,34 +174,10 @@ if __name__ == "__main__":
 
     # Set up all jobs
     all_jobs = []
-    for ffcvid in range(5):                         # 5-fold cross-validation
+    for ffcvid in range(1):                         # 5-fold cross-validation TODO: Change to 5
         for dataID in datasets:                     # Datasets
             for modelID, options in model_options:  # Models
-
-                # Set scale
-                if dataID == 'retinas':
-                    scale = 2
-                elif dataID == 'bdello':
-                    scale = 2
-                elif dataID == 'neurons':
-                    scale = 1
-                    
-                # Set image size
-                if modelID == 'vit' or modelID == 'vim':
-                    # Use smaller image for memory-intensive models
-                    img_size = 128
-                    scale *= 2
-                else:
-                    img_size = 256
-
-                # Update options
-                options = {**options, 'img_size': img_size, 'scale': scale}
-
-                # Add job
                 all_jobs.append((modelID, dataID, options, ffcvid))
-
-    # # Look at jobs
-    # look_at_jobs(all_jobs)
     
     # Get job id from sys
     jobID = 0

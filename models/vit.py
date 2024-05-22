@@ -83,13 +83,16 @@ class VisionTransformer(nn.Module):
         for i in range(n_layers):
             self.transformer_blocks.append(TransformerBlock(n_features, **kwargs))
 
-        # Patch expansion
+        # Set up output block
+        self.set_output_block(out_channels)
+
+    def set_output_block(self, out_channels):
         self.patch_expansion = nn.Sequential(
             nn.ConvTranspose2d(
                 self.n_features, 
                 out_channels, 
-                kernel_size=patch_size, 
-                stride=patch_size,
+                kernel_size=self.patch_size, 
+                stride=self.patch_size,
             ),
         )
     

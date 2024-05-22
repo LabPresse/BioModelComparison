@@ -16,6 +16,7 @@ from helper_functions import plot_images
 def train_model(
         model, datasets, savepath,
         batch_size=32, n_epochs=50, lr=1e-3,
+        segmentation=True, autoencoder=False, sigma=0.1,
         verbose=True, plot=True
     ):
 
@@ -42,6 +43,34 @@ def train_model(
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     max_grad_norm = 1/lr  # Max parameter update is 1
 
+    # Set up loss
+    if segmentation:
+        criterion = nn.CrossEntropyLoss()
+    elif autoencoder:
+        criterion = nn.MSELoss()
+
+    # Get batch function
+    def get_batch(batch):
+        
+        # Get batch
+        x, y = batch
+
+        # Convert to correct type
+        if segmentation:
+            x = x.float()
+            y = y.long()
+        elif autoencoder:
+            x = x.float()
+            y = x.float()
+            x = x + sigma * torch.randn_like(x)
+
+        # Send to device
+        x = x.to(device)
+        y = y.to(device)
+
+        # Return
+        return x, y
+
     # Train model
     for epoch in range(n_epochs):
         t = time.time()
@@ -52,19 +81,18 @@ def train_model(
         total_train_loss = 0
 
         # Iterate over batches
-        for i, (x, y) in enumerate(dataloader_train):
+        for i, batch in enumerate(dataloader_train):
             t_batch = time.time()
-            
-            # Set up batch
-            x = x.float().to(device)
-            y = y.long().to(device)
 
             # Zero gradients
             optimizer.zero_grad()
 
-            # Calculate loss
+            # Get batch
+            x, y = get_batch(batch)
             output = model(x)
-            loss = F.cross_entropy(output, y)
+
+            # Calculate loss
+            loss = criterion(output, y)
 
             # Backward pass
             loss.backward()
@@ -88,13 +116,12 @@ def train_model(
         if verbose:
             print('Validating')
         total_val_loss = 0
-        for i, (x, y) in enumerate(dataloader_val):
+        for i, batch in enumerate(dataloader_val):
             if verbose and ((i % 10 == 0) or len(dataloader_val) < 20):
                 print(f'--Val Batch {i+1}/{len(dataloader_val)}')
-            x = x.float().to(device)
-            y = y.long().to(device)
+            x, y = get_batch(batch)
             output = model(x)
-            loss = F.cross_entropy(output, y)
+            loss = criterion(output, y)
             total_val_loss += loss.item()
     
         # Save model if validation loss is lower
@@ -118,11 +145,16 @@ def train_model(
         
         # Plot images
         if plot:
-            x, y = next(iter(dataloader_train))
-            x = x.float().to(device)
-            y = y.long().to(device)
-            z = model(x).argmax(dim=1)
-            plot_images(Images=x[:5], Predictions=z[:5], Targets=y[:5])
+            batch = next(iter(dataloader_train))
+            if segmentation:
+                x, y = batch
+                x = x.float().to(device)
+                y = y.long().to(device)
+                z = model(x).argmax(dim=1)
+            elif autoencoder:
+                x, y = get_batch(batch)
+                z = model(x)
+            plot_images(Images=x[:5], Targets=y[:5], Predictions=z[:5])
             plt.pause(1)
 
     # Load best model

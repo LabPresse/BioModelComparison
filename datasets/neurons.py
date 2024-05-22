@@ -51,13 +51,16 @@ class NeuronsDataset(Dataset):
         mask = transforms.ToTensor()(mask)
 
         # Configure mask
-        mask = mask[0, :, :] != 0
-        mask = mask.long()
+        mask = (mask != 0).float()
 
         # Scale
         scale = self.scale
-        image = image[:, ::scale, ::scale]
-        mask = mask[::scale, ::scale]
+        image = torch.nn.functional.avg_pool2d(image, scale)
+        mask = torch.nn.functional.avg_pool2d(mask, scale)
+
+        # Configure mask
+        mask = mask[0, :, :] > 0
+        mask = mask.long()
 
         # Crop
         crop = self.crop
@@ -76,11 +79,11 @@ class NeuronsDataset(Dataset):
 if __name__ == "__main__":
 
     # Create a dataset object
-    dataset = NeuronsDataset()
+    dataset = NeuronsDataset(crop=(128, 128), scale=2)
 
     # Set up a figure
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 2)
+    fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
     plt.ion()
     plt.show()
 

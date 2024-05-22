@@ -50,14 +50,14 @@ class RetinaDataset(Dataset):
         mask = Image.open(os.path.join(self.root, 'masks', file))
         mask = transforms.ToTensor()(mask)
 
-        # Configure mask
-        mask = mask[0, :, :] > 0.5
-        mask = mask.long()
-
         # Scale
         scale = self.scale
-        image = image[:, ::scale, ::scale]
-        mask = mask[::scale, ::scale]
+        image = torch.nn.functional.avg_pool2d(image, scale)
+        mask = torch.nn.functional.avg_pool2d(mask, scale)
+
+        # Configure mask
+        mask = mask[0, :, :] > 0
+        mask = mask.long()
 
         # Crop
         crop = self.crop
@@ -76,11 +76,11 @@ class RetinaDataset(Dataset):
 if __name__ == "__main__":
 
     # Create a dataset object
-    dataset = RetinaDataset()
+    dataset = RetinaDataset(crop=(128, 128), scale=4)
 
     # Set up a figure
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 2)
+    fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
     plt.ion()
     plt.show()
 

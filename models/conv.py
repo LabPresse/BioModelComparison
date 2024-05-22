@@ -40,8 +40,11 @@ class ConvolutionalNet(nn.Module):
         self.layers = nn.Sequential(*layers)
 
         # Set up output block
+        self.set_output_block(out_channels)
+
+    def set_output_block(self, out_channels):
         self.output_block = nn.Sequential(
-            nn.Conv2d(n_features, out_channels, kernel_size=1),
+            nn.Conv2d(self.n_features, out_channels, kernel_size=1),
         )
 
     def forward(self, x):
