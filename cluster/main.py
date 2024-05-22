@@ -52,7 +52,6 @@ def run_training_scheme(
         out_channels = 2
     elif dataID == 'retinas':
         dataset = RetinaDataset(crop=(128, 128), scale=4)
-        dataset = RetinaDataset(crop=(64, 64), scale=32)  # TODO: DELETE
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
@@ -180,7 +179,7 @@ if __name__ == "__main__":
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
     # Get job id from sys
-    jobID = 0
+    jobID = 9
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
