@@ -160,9 +160,9 @@ cython_debug/
 #.idea/
 
 # Keep data directories, but ignore contents
-datasets/bdello/*
-datasets/neurons/*
-datasets/retinas/*
+data/bdello/*
+data/neurons/*
+data/retinas/*
 
 # Keep slurmjobs directory, but ignore contents
 cluster/slurmjobs/*
