@@ -14,7 +14,7 @@ printf "#!/bin/bash
 #SBATCH -q public
 #SBATCH --partition=general
 #SBATCH -D /home/jsbryan4/BioModelComparison/
-#SBATCH -t 15:00
+#SBATCH -t 5-00:00
 #SBATCH -o cluster/slurmjobs/job$i.out
 #SBATCH -e cluster/slurmjobs/job$i.err
 #SBATCH -c 1

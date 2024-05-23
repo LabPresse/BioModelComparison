@@ -15,7 +15,7 @@ from helper_functions import plot_images
 # Define training function
 def train_model(
         model, datasets, savepath,
-        batch_size=32, n_epochs=50, lr=1e-3,
+        batch_size=16, n_epochs=50, lr=1e-3,
         segmentation=True, autoencoder=False, sigma=0.1,
         verbose=True, plot=True
     ):
