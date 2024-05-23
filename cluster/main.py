@@ -174,6 +174,7 @@ if __name__ == "__main__":
         dataID, 
         savename,
         verbose=True,
+        n_epochs=1,
         **options
     )
 
