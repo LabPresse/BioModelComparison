@@ -1,5 +1,6 @@
 
 # Import libraries
+print('Importing libraries')
 import os
 import sys
 import json
@@ -11,6 +12,7 @@ from torch.utils.data import Subset, random_split
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import local modules
+print('Importing local modules')
 from helper_functions import plot_images, count_parameters, check_gradient, convert_to_serializable, get_savename
 from models.conv import ConvolutionalNet
 from models.unet import UNet
