@@ -10,6 +10,7 @@ echo "   -$((i+1))/$num_jobs"
 
 printf "#!/bin/bash
 
+#SBATCH --export=NONE   # Purge the job-submitting shell environment
 #SBATCH -q public
 #SBATCH --partition=general
 #SBATCH -D /home/jsbryan4/BioModelComparison/
@@ -19,6 +20,7 @@ printf "#!/bin/bash
 #SBATCH -c 1
 #SBATCH --mem=8G
 
+module purge
 module load mamba/latest
 source activate myenv
 
