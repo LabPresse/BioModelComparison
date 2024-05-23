@@ -32,7 +32,7 @@ outpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outfiles')
 # Define training scheme function
 def run_training_scheme(
         modelID, dataID, savename, 
-        pretrain=False, ffcvid=0, n_epochs=100,
+        ffcvid=0, n_epochs=100,
         verbose=True, plot=False,
         **kwargs
     ):
@@ -47,7 +47,6 @@ def run_training_scheme(
         print('Loading dataset.')
     if dataID == 'retinas':
         dataset = RetinaDataset(crop=(128, 128), scale=4)
-        dataset = RetinaDataset(crop=(128, 128), scale=16)  # TODO: Remove
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
@@ -98,19 +97,6 @@ def run_training_scheme(
     dataset_train = Subset(dataset, indices=[idx for i in trainIDs for idx in splits[i].indices])
     datasets = (dataset_train, dataset_val, dataset_test)
 
-    # Pretrain model
-    if pretrain:
-        if verbose:
-            print('Pretraining model as autoencoder.')
-        model.set_output_block(in_channels)
-        model, _ = train_model(
-            model, datasets, os.path.join(outpath, f'{savename}.pth'),
-            n_epochs=n_epochs, segmentation=False, autoencoder=True,
-            verbose=verbose, plot=plot,
-            
-        )
-        model.set_output_block(out_channels)
-
     # Train model
     if verbose:
         print('Training model.')
@@ -145,8 +131,8 @@ if __name__ == "__main__":
     datasets = ['retinas', 'neurons', 'bdello', ]
     model_options = [
         # ConvolutionalNet
-        ['conv', {'n_layers': 4}],
         ['conv', {'n_layers': 8}],
+        ['conv', {'n_layers': 12}],
         ['conv', {'n_layers': 16}],
         # UNet
         ['unet', {'n_blocks': 2}],
@@ -158,12 +144,12 @@ if __name__ == "__main__":
         ['resnet', {'n_blocks': 4}],
         # VisionTransformer
         ['vit', {'n_layers': 4}],
+        ['vit', {'n_layers': 6}],
         ['vit', {'n_layers': 8}],
-        ['vit', {'n_layers': 16}],
         # # VisionMamba
         ['vim', {'n_layers': 4}],
+        ['vim', {'n_layers': 6}],
         ['vim', {'n_layers': 8}],
-        ['vim', {'n_layers': 16}],
     ]
 
     # Set up all jobs
@@ -174,7 +160,7 @@ if __name__ == "__main__":
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
     # Get job id from sys
-    jobID = 12
+    jobID = 14
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
@@ -188,8 +174,6 @@ if __name__ == "__main__":
         dataID, 
         savename,
         verbose=True,
-        pretrain=True,  # TODO: Remove
-        plot=True,  # TODO: Remove
         **options
     )
 

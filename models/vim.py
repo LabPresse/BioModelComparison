@@ -11,7 +11,7 @@ from zeta.nn.modules.p_scan import pscan
 
 # Define Mamba block
 class MambaBlock(nn.Module):
-    def __init__(self, n_features, n_states, expansion=1.5):
+    def __init__(self, n_features, n_states, expansion=1):
         super(MambaBlock, self).__init__()
 
         # Set attributes
@@ -121,7 +121,7 @@ class MambaBlock(nn.Module):
 class VisionMamba(nn.Module):
     def __init__(self, 
             img_size, in_channels, out_channels,
-            n_layers=8, n_states=64, n_features=64,
+            n_layers=8, n_features=64, n_states=128,
             patch_size=8, **kwargs
         ):
         super(VisionMamba, self).__init__()
