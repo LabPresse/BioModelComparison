@@ -33,7 +33,7 @@ outpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outfiles')
 # Define training scheme function
 def run_training_scheme(
         modelID, dataID, savename, 
-        pretrain=True, ffcvid=0, n_epochs=20,
+        pretrain=False, ffcvid=0, n_epochs=100,
         verbose=True, plot=False,
         **kwargs
     ):
@@ -63,32 +63,27 @@ def run_training_scheme(
     if verbose:
         print('Setting up model.')
     if modelID == 'conv':
-        # ConvolutionalNet
         model = ConvolutionalNet(
             in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'unet':
-        # UNet
         model = UNet(
             in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'resnet':
-        # ResNet
         model = ResNet(
             in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'vit':
-        # VisionTransformer
         model = VisionTransformer(
-            img_size=128,
-            in_channels=in_channels, out_channels=out_channels, **kwargs
+            img_size=128, in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'vim':
-        # VisionMamba
         model = VisionMamba(
-            img_size=128,
-            in_channels=in_channels, out_channels=out_channels, **kwargs
+            img_size=128, in_channels=in_channels, out_channels=out_channels, **kwargs
         )
+
+    # Move model to device
     model = model.to(device)
         
     # Get 5-fold cross-validation split from ffcvID
@@ -166,9 +161,9 @@ if __name__ == "__main__":
         ['vit', {'n_layers': 8}],
         ['vit', {'n_layers': 16}],
         # # VisionMamba
-        # ['vim', {'n_layers': 4}],
-        # ['vim', {'n_layers': 8}],
-        # ['vim', {'n_layers': 16}],
+        ['vim', {'n_layers': 4}],
+        ['vim', {'n_layers': 8}],
+        ['vim', {'n_layers': 16}],
     ]
 
     # Set up all jobs
@@ -179,7 +174,7 @@ if __name__ == "__main__":
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
     # Get job id from sys
-    jobID = 9
+    jobID = 14
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
@@ -193,6 +188,8 @@ if __name__ == "__main__":
         dataID, 
         savename,
         verbose=True,
+        pretrain=True,  # TODO: Remove
+        plot=True,  # TODO: Remove
         **options
     )
 

@@ -22,6 +22,7 @@ root = 'cluster/outfiles/'
 figpath = 'figures/'
 
 
+
 # Plot ROC curves
 def plot_roc_curves(basenames):
 
@@ -41,7 +42,7 @@ def plot_roc_curves(basenames):
         acc_avg = 0
         sens_avg = 0
         spec_avg = 0
-        for ffcvid in range(5):
+        for ffcvid in range(1):
             savename = basename + f'_ffcv={ffcvid}'
             with open(os.path.join(root, f'{savename}.json'), 'r') as f:
                 statistics = json.load(f)
@@ -52,7 +53,7 @@ def plot_roc_curves(basenames):
 
 
         # Loop over ffcv splits
-        for ffcvid in range(5):
+        for ffcvid in range(1):
 
             # Load statistics
             savename = basename + f'_ffcv={ffcvid}'
@@ -103,7 +104,7 @@ def plot_losses(basenames):
     # Loop over models and options
     for i, basename in enumerate(basenames):
         # Loop over ffcv splits
-        for ffcvid in range(5):
+        for ffcvid in range(1):
 
             # Load statistics
             savename = basename + f'_ffcv={ffcvid}'
@@ -132,13 +133,11 @@ def plot_outputs(datasetID, basenames, n_images=5):
 
     # Get dataset
     if datasetID == 'bdello':
-        dataset = BdelloDataset(crop=(256, 256), scale=2)
+        dataset = BdelloDataset(crop=(128, 128), scale=4)
     elif datasetID == 'retinas':
-        dataset = RetinaDataset(crop=(256, 256), scale=2)
+        dataset = RetinaDataset(crop=(128, 128), scale=4)
     elif datasetID == 'neurons':
-        dataset = NeuronsDataset(crop=(256, 256), scale=1)
-    else:
-        raise ValueError('Invalid dataset.')
+        dataset = NeuronsDataset(crop=(128, 128), scale=2)
 
     # Get batch
     dataloader = DataLoader(dataset, batch_size=n_images, shuffle=True)
@@ -173,11 +172,7 @@ def plot_outputs(datasetID, basenames, n_images=5):
         model.eval()
         
         # Get predictions
-        if modelID == 'vit' or modelID == 'vim':
-            # If vit or vim, downsample images
-            x = x[:, :, ::2, ::2]
-        else:
-            z = model(x).detach().cpu().numpy().argmax(axis=1)
+        z = model(x).detach().cpu().numpy().argmax(axis=1)
         zs[modelID] = z
 
     # Plot images
@@ -191,7 +186,7 @@ def plot_outputs(datasetID, basenames, n_images=5):
 if __name__ == "__main__":
 
     # Set up constants
-    datasets = ['bdello', 'retinas', 'neurons']
+    datasets = ['bdello', 'neurons', ]#'retinas']
     models = ['conv', 'unet', 'resnet', 'vit']
 
     # Set up basenames for all jobs

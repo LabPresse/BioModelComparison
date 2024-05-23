@@ -7,22 +7,26 @@ import torch.nn as nn
 
 # Define transformer block
 class TransformerBlock(nn.Module):
-    def __init__(self, n_features, n_heads=8, mlp_ratio=1.5):
+    def __init__(self, n_features, n_heads=8, expansion=1):
         super(TransformerBlock, self).__init__()
 
         # Set up attributes
         self.n_features = n_features
         self.n_heads = n_heads
-        self.mlp_ratio = mlp_ratio
+        self.expansion = expansion
+        
+        # Calculate constants
+        n_features_inner = int(n_features * expansion)
+        self.n_features_inner = n_features_inner
 
         # Set up multi-head self-attention
         self.self_attn = nn.MultiheadAttention(n_features, n_heads, batch_first=True)
 
         # Set up feedforward layer
         self.mlp = nn.Sequential(
-            nn.Linear(n_features, int(n_features * mlp_ratio)),
+            nn.Linear(n_features, n_features_inner),
             nn.ReLU(),
-            nn.Linear(int(n_features * mlp_ratio), n_features),
+            nn.Linear(n_features_inner, n_features),
         )
 
         # Set up normalization layers
@@ -63,6 +67,7 @@ class VisionTransformer(nn.Module):
         shape_after_patch = (img_size // patch_size, img_size // patch_size)
         self.n_patches = n_patches
         self.shape_after_patch = shape_after_patch
+
 
         # Set up positional encoding
         pos_embed = torch.zeros(n_patches, n_features)
