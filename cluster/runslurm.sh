@@ -19,7 +19,7 @@ printf "#!/bin/bash
 #SBATCH -c 1
 #SBATCH --mem=8G
 
-module load mamba
+module load mamba/latest
 source activate myenv
 
 python -u cluster/main.py $i
