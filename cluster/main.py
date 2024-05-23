@@ -17,10 +17,9 @@ from models.unet import UNet
 from models.resnet import ResNet
 from models.vit import VisionTransformer
 from models.vim import VisionMamba
-# from models.resnet import ResNet
-from datasets.bdello import BdelloDataset
-from datasets.retinas import RetinaDataset
-from datasets.neurons import NeuronsDataset
+from data.bdello import BdelloDataset
+from data.neurons import NeuronsDataset
+from data.retinas import RetinaDataset
 from training import train_model
 from testing import evaluate_model
 
@@ -46,17 +45,18 @@ def run_training_scheme(
     # Get dataset
     if verbose:
         print('Loading dataset.')
-    if dataID == 'bdello':
-        dataset = BdelloDataset(crop=(128, 128), scale=4)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'retinas':
+    if dataID == 'retinas':
         dataset = RetinaDataset(crop=(128, 128), scale=4)
+        dataset = RetinaDataset(crop=(128, 128), scale=16)  # TODO: Remove
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
         dataset = NeuronsDataset(crop=(128, 128), scale=2)
         in_channels = 3
+        out_channels = 2
+    elif dataID == 'bdello':
+        dataset = BdelloDataset(crop=(128, 128), scale=4)
+        in_channels = 1
         out_channels = 2
 
     # Get model
@@ -174,7 +174,7 @@ if __name__ == "__main__":
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
     # Get job id from sys
-    jobID = 14
+    jobID = 12
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 

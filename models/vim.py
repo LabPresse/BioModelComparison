@@ -5,12 +5,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange, einsum
+from zeta.nn.modules.p_scan import pscan
 
 
 
 # Define Mamba block
 class MambaBlock(nn.Module):
-    def __init__(self, n_features, n_states, expansion=1):
+    def __init__(self, n_features, n_states, expansion=1.5):
         super(MambaBlock, self).__init__()
 
         # Set attributes
@@ -97,22 +98,21 @@ class MambaBlock(nn.Module):
         D = self.D                 # (n_features_inner)
         Delta = self.get_Delta(h)  # (B, L, n_features_inner)
 
-        # Calculate constants
-        A_bar = torch.exp(-einsum(Delta, A, 'b l f, f n -> b l f n'))
-        B_bar_h = einsum(Delta, B, h, 'b l f, b l n, b l f -> b l f n')
+        # Perform parallel scan
+        # y = selective_scan(h, Delta, A, B, C, D)
+        
+        # Calulate tensors
+        A_bar = torch.exp(-Delta.unsqueeze(-1) * A)  # (B, L, ED, N)
+        B_bar = Delta.unsqueeze(-1) * B.unsqueeze(2)  # (B, L, ED, N)
+        BX = B_bar * h.unsqueeze(-1)  # (B, L, ED, N)
 
-        # Perform selective scan
-        ys = []
-        state = torch.zeros(h.shape[0], self.n_features_inner, self.n_states, device=h.device)
-        for i in range(h.shape[1]):
-            state = A_bar[:, i] * state + B_bar_h[:, i]
-            y = einsum(state, C[:, i], 'b f n, b n -> b f')
-            ys.append(y)
-        y = torch.stack(ys, dim=1)
+        # Get states through parallel scan
+        states = pscan(A_bar, BX)
 
-        # Add D term
-        y = y + h * D
-
+        # Get output
+        y = (states @ C.unsqueeze(-1)).squeeze()
+        y = y + D * h
+            
         # Return y
         return y
 
@@ -208,10 +208,13 @@ if __name__ == '__main__':
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))
 
     # Set up input tensor
-    x = torch.randn(32, 3, 128, 128)
+    x = torch.randn(1, 3, 128, 128)
 
     # Test model
     y = model(x)
+
+    # Test backprop
+    y.sum().backward()
 
     # Print output shape
     print(y.shape)

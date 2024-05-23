@@ -150,6 +150,9 @@ if __name__ == '__main__':
     # Test model
     y = model(x)
 
+    # Test backprop
+    y.sum().backward()
+
     # Print output shape
     print(y.shape)
 

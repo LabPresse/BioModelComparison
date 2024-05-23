@@ -7,3 +7,5 @@ kaggle
 requests
 rarfile
 pillow
+einops
+zetascale

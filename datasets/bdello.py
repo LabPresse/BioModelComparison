@@ -28,7 +28,10 @@ class BdelloDataset(Dataset):
             )
 
         # Set up root directory
-        self.root = os.path.join('datasets/bdello')
+        self.root = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'bdello'
+        )
 
         # Get files
         self.files = os.listdir(os.path.join(self.root, 'images'))
