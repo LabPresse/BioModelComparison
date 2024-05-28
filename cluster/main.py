@@ -8,12 +8,11 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import Subset, random_split
 
-# Add parent directory to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # Import local modules
 print('Importing local modules')
-from helper_functions import plot_images, count_parameters, check_gradient, convert_to_serializable, get_savename
+sys.path.append( # Add parent directory to path
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 from models.conv import ConvolutionalNet
 from models.unet import UNet
 from models.resnet import ResNet
@@ -24,7 +23,9 @@ from data.neurons import NeuronsDataset
 from data.retinas import RetinaDataset
 from training import train_model
 from testing import evaluate_model
-
+from helper_functions import (
+    plot_images, count_parameters, check_gradient, convert_to_serializable, get_savename
+)
 
 # Set environment
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -161,23 +162,26 @@ if __name__ == "__main__":
             for modelID, options in model_options:  # Models
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
-    # Get job id from sys
-    jobID = 44
-    if len(sys.argv) > 1:
-        jobID = int(sys.argv[1])
+    # # Get job id from sys
+    # jobID = 0
+    # if len(sys.argv) > 1:
+    #     jobID = int(sys.argv[1])
 
-    # Get job parameters
-    modelID, dataID, options, ffcvid = all_jobs[jobID]
-    savename = get_savename(modelID, dataID, options, ffcvid)
-    
-    # Run training scheme
-    run_training_scheme(
-        modelID, 
-        dataID, 
-        savename,
-        verbose=True,
-        **options
-    )
+    # Loop over jobIDs
+    for jobID in range(10, 15):  # These timed out on the cluster
+
+        # Get job parameters
+        modelID, dataID, options, ffcvid = all_jobs[jobID]
+        savename = get_savename(modelID, dataID, options, ffcvid)
+        
+        # Run training scheme
+        run_training_scheme(
+            modelID, 
+            dataID, 
+            savename,
+            verbose=True,
+            **options
+        )
 
     # Done
     print('Done.')

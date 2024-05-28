@@ -76,7 +76,7 @@ class VisionTransformer(nn.Module):
         pos_embed[:, 0::2] = torch.sin(position * div_term)
         pos_embed[:, 1::2] = torch.cos(position * div_term)
         pos_embed = pos_embed.unsqueeze(0)
-        self.pos_embed = pos_embed
+        self.register_buffer('pos_embed', pos_embed)
 
         # Patch embedding
         self.patch_embedding = nn.Sequential(

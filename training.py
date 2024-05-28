@@ -20,13 +20,17 @@ def train_model(
         verbose=True, plot=True
     ):
 
-    # Print status
-    if verbose:
-        status = f'Training model with {sum(p.numel() for p in model.parameters())} parameters.'
-        print(status)
-
     # Set up environment
     device = next(model.parameters()).device
+
+    # Print status
+    if verbose:
+        status = ' '.join([
+            f'Training model',
+            f'with {sum(p.numel() for p in model.parameters())} parameters',
+            f'on {device}.',
+        ])
+        print(status)
 
     # Track training stats
     epoch_times = []
@@ -36,8 +40,14 @@ def train_model(
 
     # Set up data loaders
     dataset_train, dataset_val, _ = datasets
-    dataloader_train = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
-    dataloader_val = DataLoader(dataset_val, batch_size=batch_size, shuffle=False)
+    dataloader_train = DataLoader(
+        dataset_train, batch_size=batch_size, 
+        shuffle=True, num_workers=os.cpu_count(), pin_memory=True
+    )
+    dataloader_val = DataLoader(
+        dataset_val, batch_size=batch_size, 
+        shuffle=False, num_workers=os.cpu_count(), pin_memory=True
+    )
 
     # Set up optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -82,7 +92,7 @@ def train_model(
 
         # Iterate over batches
         for i, batch in enumerate(dataloader_train):
-            t_batch = time.time()
+            t_batch = time.time()  # Get batch time
 
             # Zero gradients
             optimizer.zero_grad()
@@ -103,26 +113,42 @@ def train_model(
             total_train_loss += loss.item()
 
             # Print status
-            if verbose and ((i % 10 == 0) or len(dataloader_train) < 20):
-                status = ' '.join([
-                    f'--',
-                    f'Batch {i+1}/{len(dataloader_train)}',
-                    f'({(time.time()-t_batch):.2f} s/batch)',
+            if verbose and (
+                    (i == 0)                                   # Print first
+                    or (i == len(dataloader_train) - 1)        # Print last
+                    or ((i + 1) % 50 == 0)                     # Print every 50
+                    or (len(dataloader_train) < 20)            # Print all if small dataset
+                ):
+                status = ' '.join([                            # Set up status
+                    f'--',                                     # Indent
+                    f'Batch {i+1}/{len(dataloader_train)}',    # Batch number
+                    f'({(time.time()-t_batch):.2f} s/batch)',  # Time per batch
                 ])
-                print(status)
+                print(status)  # Print status
 
 
         # Get validation loss
         if verbose:
             print('Validating')
-        total_val_loss = 0
-        for i, batch in enumerate(dataloader_val):
-            if verbose and ((i % 10 == 0) or len(dataloader_val) < 20):
-                print(f'--Val Batch {i+1}/{len(dataloader_val)}')
-            x, y = get_batch(batch)
-            output = model(x)
-            loss = criterion(output, y)
-            total_val_loss += loss.item()
+        total_val_loss = 0                                     # Initialize loss
+        for i, batch in enumerate(dataloader_val):             # Iterate over batches
+            t_batch = time.time()                              # Get batch time
+            x, y = get_batch(batch)                            # Get batch
+            output = model(x)                                  # Get output
+            loss = criterion(output, y)                        # Calculate loss
+            total_val_loss += loss.item()                      # Update loss
+            if verbose and (
+                    (i == 0)                                   # Print first
+                    or (i == len(dataloader_val) - 1)          # Print last
+                    or ((i + 1) % 50 == 0)                     # Print every 50
+                    or (len(dataloader_val) < 20)              # Print all if small dataset
+                ):
+                status = ' '.join([                            # Set up status
+                    f'--',                                     # Indent
+                    f'Batch {i+1}/{len(dataloader_val)}',      # Batch number
+                    f'({(time.time()-t_batch):.2f} s/batch)',  # Time per batch
+                ])
+                print(status)  # Print status
     
         # Save model if validation loss is lower
         if total_val_loss < min_val_loss:
@@ -136,25 +162,27 @@ def train_model(
 
         # Print status
         if verbose:
-            status = ':::' + '\n:::'.join([
-                f'Train loss: {total_train_loss:.4e}',
-                f'Val loss: {total_val_loss:.4e}',
-                f'Time: {time.time()-t:.2f} sec.'
+            status = ':::' + '\n:::'.join([             # Set up status
+                f'Train loss: {total_train_loss:.4e}',  # Print training loss
+                f'Val loss: {total_val_loss:.4e}',      # Print validation loss
+                f'Time: {time.time()-t:.2f} sec.'       # Print time
             ])
             print(status)
         
         # Plot images
         if plot:
-            batch = next(iter(dataloader_train))
-            if segmentation:
-                x, y = batch
-                x = x.float().to(device)
-                y = y.long().to(device)
-                z = model(x).argmax(dim=1)
-            elif autoencoder:
-                x, y = get_batch(batch)
-                z = model(x)
-            plot_images(Images=x[:5], Targets=y[:5], Predictions=z[:5])
+            batch = next(iter(dataloader_train))  # Get batch
+            if segmentation:                      # Segmentation
+                x, y = batch                      # -- x is images, y is masks
+                z = model(x).argmax(dim=1)        # -- z is highest probability class
+            elif autoencoder:                     # Autoencoder
+                x, y = get_batch(batch)           # -- x is noisy images, y is clean images
+                z = model(x)                      # -- z is denoised images
+            plot_images(
+                Images=x[:5], 
+                Targets=y[:5], 
+                Predictions=z[:5]
+            )
             plt.pause(1)
 
     # Load best model
