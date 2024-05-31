@@ -18,7 +18,7 @@ printf "#!/bin/bash
 #SBATCH -o cluster/slurmjobs/job$i.out
 #SBATCH -e cluster/slurmjobs/job$i.err
 #SBATCH -c 1
-#SBATCH --mem=8G
+#SBATCH --mem=16G
 
 module purge
 module load mamba/latest

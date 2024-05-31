@@ -41,12 +41,12 @@ def train_model(
     # Set up data loaders
     dataset_train, dataset_val, _ = datasets
     dataloader_train = DataLoader(
-        dataset_train, batch_size=batch_size, 
-        shuffle=True, num_workers=os.cpu_count(), pin_memory=True
+        dataset_train, batch_size=batch_size, shuffle=True, 
+        # num_workers=os.cpu_count(), pin_memory=True
     )
     dataloader_val = DataLoader(
-        dataset_val, batch_size=batch_size, 
-        shuffle=False, num_workers=os.cpu_count(), pin_memory=True
+        dataset_val, batch_size=batch_size, shuffle=False, 
+        # num_workers=os.cpu_count(), pin_memory=True
     )
 
     # Set up optimizer
