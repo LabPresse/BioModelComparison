@@ -168,7 +168,7 @@ if __name__ == "__main__":
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
     # Get job id from sys
-    jobID = 12
+    jobID = 14
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
@@ -182,8 +182,7 @@ if __name__ == "__main__":
         dataID, 
         savename,
         verbose=True,
-        n_epochs=100,  # TODO: remove
-        plot=True,
+        n_epochs=1,  # TODO: remove
         **options
     )
 
