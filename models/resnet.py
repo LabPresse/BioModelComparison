@@ -42,7 +42,7 @@ class ResNetBlock(nn.Module):
         )
 
         # Define shortcut connection
-        if (in_features != out_features) and stride == 1:
+        if (in_features == out_features) and stride == 1:
             self.shortcut = nn.Identity()
         else:
             if upsample:
@@ -51,6 +51,7 @@ class ResNetBlock(nn.Module):
                         in_features, out_features, 
                         kernel_size=stride, stride=stride,
                     ),
+                    nn.GroupNorm(1, out_features, affine=False),
                 )
             else:
                 self.shortcut = nn.Sequential(
@@ -58,6 +59,7 @@ class ResNetBlock(nn.Module):
                         in_features, out_features, 
                         kernel_size=stride, stride=stride,
                     ),
+                    nn.GroupNorm(1, out_features, affine=False),
                 )
 
     def forward(self, x):
@@ -82,7 +84,7 @@ class ResNetBlock(nn.Module):
 class ResNet(nn.Module):
     def __init__(self,
             in_channels, out_channels,
-            n_blocks=3, n_features=4, n_layers_per_block=2,
+            n_blocks=3, n_features=8, n_layers_per_block=2, expansion=2,
         ):
         super(ResNet, self).__init__()
 
@@ -91,6 +93,8 @@ class ResNet(nn.Module):
         self.out_channels = out_channels
         self.n_layers = n_blocks
         self.n_features = n_features
+        self.n_layers_per_block = n_layers_per_block
+        self.expansion = expansion
 
         # Set up input block
         self.input_block = nn.Sequential(
@@ -105,7 +109,7 @@ class ResNet(nn.Module):
         self.encoder_blocks = nn.ModuleList()
         n_in = n_features
         for i in range(n_blocks):
-            n_out = n_in * 2
+            n_out = n_in * expansion
 
             # Initialize layers
             layers = []
@@ -129,10 +133,10 @@ class ResNet(nn.Module):
 
         
         # Set up decoder blocks
-        n_in = n_features * 2 ** n_blocks
+        n_in = n_features * expansion ** n_blocks
         self.decoder_blocks = nn.ModuleList()
         for i in range(n_blocks):
-            n_out = n_in // 2
+            n_out = n_in // expansion
 
             # Initialize layers
             layers = []

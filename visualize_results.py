@@ -16,6 +16,7 @@ from models.conv import ConvolutionalNet
 from models.unet import UNet
 from models.resnet import ResNet
 from models.vit import VisionTransformer
+from models.vim import VisionMamba
 
 # Set environment
 root = 'cluster/outfiles/'
@@ -83,7 +84,7 @@ def plot_roc_curves(basenames):
     ax[0, 0].set_ylabel('TPR')
     ax[0, 0].set_xlabel('FPR')
     ax[0, 0].legend()
-    plt.pause(.1)
+    plt.pause(1)
     plt.tight_layout()
 
     # Return figure and axes
@@ -121,7 +122,7 @@ def plot_losses(basenames):
     ax[1, 0].set_ylabel('Val Loss')
     ax[1, 0].set_xlabel('Epoch')
     ax[0, 0].legend()
-    plt.pause(.1)
+    plt.pause(1)
     plt.tight_layout()
 
     # Return figure and axes
@@ -155,20 +156,33 @@ def plot_outputs(datasetID, basenames, n_images=5):
         # Load model
         if 'conv' in basename:
             n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
-            model = ConvolutionalNet(in_channels=in_channels, out_channels=out_channels, n_layers=n_layers)
+            model = ConvolutionalNet(
+                in_channels=in_channels, out_channels=out_channels, n_layers=n_layers
+            )
         elif 'unet' in basename:
             n_blocks = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
-            model = UNet(in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks)
+            model = UNet(
+                in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks
+            )
         elif 'resnet' in basename:
             n_blocks = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
-            model = ResNet(in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks)
-        elif 'vit' in basename or 'vim' in basename:
+            model = ResNet(
+                in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks
+            )
+        elif 'vit' in basename:
             n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
-            model = VisionTransformer(img_size=128, in_channels=in_channels, out_channels=out_channels, n_layers=n_layers)
+            model = VisionTransformer(
+                img_size=128, in_channels=in_channels, out_channels=out_channels, n_layers=n_layers
+            )
+        elif 'vim' in basename:
+            n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
+            model = VisionMamba(
+                img_size=128, in_channels=in_channels, out_channels=out_channels, n_layers=n_layers
+            )
 
         # Load model
         savename = f'{basename}_ffcv=0'
-        model.load_state_dict(torch.load(os.path.join(root, f'{savename}.pth')))
+        model.load_state_dict(torch.load(os.path.join(root, f'{savename}.pth')), strict=False)
         model.eval()
         
         # Get predictions
@@ -186,8 +200,8 @@ def plot_outputs(datasetID, basenames, n_images=5):
 if __name__ == "__main__":
 
     # Set up constants
-    datasets = ['bdello', 'neurons', ]#'retinas']
-    models = ['conv', 'unet', 'resnet', 'vit']
+    datasets = ['bdello', 'neurons', 'retinas']
+    models = ['conv', 'unet', 'resnet', 'vit', 'vim']
 
     # Set up basenames for all jobs
     basenames = [f[:-5] for f in os.listdir(root) if f.endswith('.json')]
@@ -198,7 +212,8 @@ if __name__ == "__main__":
         'conv': 'n_layers=8',
         'unet': 'n_blocks=3',
         'resnet': 'n_blocks=3',
-        'vit': 'n_layers=8',
+        'vit': 'n_layers=6',
+        'vim': 'n_layers=6',
     }
     best_basenames = []
     for modelID in models:
@@ -211,6 +226,18 @@ if __name__ == "__main__":
         # Get basenames for dataset
         basenames_dataset = [f for f in basenames if datasetID in f]
         best_basenames_dataset = [f for f in best_basenames if datasetID in f]
+
+        # Plot ROC curves for best models
+        fig, ax = plot_roc_curves(best_basenames_dataset)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_roc.png'))
+
+        # Plot losses for best models
+        fig, ax = plot_losses(best_basenames_dataset)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_losses.png'))
+
+        # Plot outputs for best models
+        fig, ax = plot_outputs(datasetID, best_basenames_dataset)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
 
         # Plot ROC curves and losses for different params of each model
         for modelID in models:
@@ -225,18 +252,6 @@ if __name__ == "__main__":
             # Plot losses
             fig, ax = plot_losses(basenames_dataset_model)
             fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_losses.png'))
-
-        # Plot ROC curves for best models
-        fig, ax = plot_roc_curves(best_basenames_dataset)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_roc.png'))
-
-        # Plot losses for best models
-        fig, ax = plot_losses(best_basenames_dataset)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_losses.png'))
-
-        # Plot outputs for best models
-        fig, ax = plot_outputs(datasetID, best_basenames_dataset)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
 
     # Done
     print('Done.')

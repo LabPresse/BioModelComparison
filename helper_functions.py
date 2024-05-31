@@ -228,7 +228,7 @@ def plot_images(images=None, col_labels=None, **image_dict):
             ax[i, j].set_xticks([])
             ax[i, j].set_yticks([])
     plt.tight_layout()
-    plt.pause(.1)
+    plt.pause(1)
     
     # Return
     return fig, ax

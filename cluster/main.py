@@ -21,6 +21,7 @@ from models.vim import VisionMamba
 from data.bdello import BdelloDataset
 from data.neurons import NeuronsDataset
 from data.retinas import RetinaDataset
+from data.letters import ChineseCharacters
 from training import train_model
 from testing import evaluate_model
 from helper_functions import (
@@ -35,7 +36,7 @@ outpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'outfiles')
 # Define training scheme function
 def run_training_scheme(
         modelID, dataID, savename, 
-        ffcvid=0, n_epochs=100,
+        ffcvid=0, n_epochs=50,
         verbose=True, plot=False,
         **kwargs
     ):
@@ -53,11 +54,15 @@ def run_training_scheme(
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
-        dataset = NeuronsDataset(crop=(128, 128), scale=2)
+        dataset = NeuronsDataset(crop=(128, 128), scale=8)
         in_channels = 3
         out_channels = 2
     elif dataID == 'bdello':
         dataset = BdelloDataset(crop=(128, 128), scale=4)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters':
+        dataset = ChineseCharacters(shape=(128, 128), sigma=0.25, max_characters=1000)
         in_channels = 1
         out_channels = 2
 
@@ -131,7 +136,7 @@ def run_training_scheme(
 if __name__ == "__main__":
         
     # Set up datasets, models, and options
-    datasets = ['retinas', 'neurons', 'bdello', ]
+    datasets = ['letters', 'neurons', 'retinas', 'bdello',]
     model_options = [
         # ConvolutionalNet
         ['conv', {'n_layers': 8}],
@@ -139,8 +144,8 @@ if __name__ == "__main__":
         ['conv', {'n_layers': 16}],
         # UNet
         ['unet', {'n_blocks': 2}],
+        ['unet', {'n_blocks': 3, 'expansion': 1}],
         ['unet', {'n_blocks': 3}],
-        ['unet', {'n_blocks': 4}],
         # ResNet
         ['resnet', {'n_blocks': 2}],
         ['resnet', {'n_blocks': 3}],
@@ -162,26 +167,24 @@ if __name__ == "__main__":
             for modelID, options in model_options:  # Models
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
-    # # Get job id from sys
-    # jobID = 0
-    # if len(sys.argv) > 1:
-    #     jobID = int(sys.argv[1])
+    # Get job id from sys
+    jobID = 0
+    if len(sys.argv) > 1:
+        jobID = int(sys.argv[1])
 
-    # Loop over jobIDs
-    for jobID in range(10, 15):  # These timed out on the cluster
-
-        # Get job parameters
-        modelID, dataID, options, ffcvid = all_jobs[jobID]
-        savename = get_savename(modelID, dataID, options, ffcvid)
-        
-        # Run training scheme
-        run_training_scheme(
-            modelID, 
-            dataID, 
-            savename,
-            verbose=True,
-            **options
-        )
+    # Get job parameters
+    modelID, dataID, options, ffcvid = all_jobs[jobID]
+    savename = get_savename(modelID, dataID, options, ffcvid)
+    
+    # Run training scheme
+    run_training_scheme(
+        modelID, 
+        dataID, 
+        savename,
+        verbose=True,
+        plot=True,  # TODO: Change to False
+        **options
+    )
 
     # Done
     print('Done.')

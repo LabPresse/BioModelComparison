@@ -28,9 +28,12 @@ class MambaBlock(nn.Module):
         # Initialize projection blocks
         self.project_in = nn.Sequential(
             nn.GroupNorm(1, n_features, affine=False),  # Normalize input
-            nn.Linear(n_features, n_features_inner)
+            nn.Linear(n_features, n_features_inner),
         )
-        self.project_out = nn.Linear(n_features_inner, n_features)
+        self.project_out = nn.Sequential(
+            nn.InstanceNorm1d(n_features_inner),
+            nn.Linear(n_features_inner, n_features),
+        )
 
         # Initialize convolution block
         self.conv_block = nn.Sequential(
@@ -40,6 +43,7 @@ class MambaBlock(nn.Module):
                 kernel_size=3,
                 padding=1,
             ),
+            nn.InstanceNorm1d(n_features_inner),
             nn.SiLU(),
         )
 
@@ -121,7 +125,7 @@ class MambaBlock(nn.Module):
 class VisionMamba(nn.Module):
     def __init__(self, 
             img_size, in_channels, out_channels,
-            n_layers=8, n_features=64, n_states=64,
+            n_layers=8, n_features=64, n_states=128,
             patch_size=8, **kwargs
         ):
         super(VisionMamba, self).__init__()

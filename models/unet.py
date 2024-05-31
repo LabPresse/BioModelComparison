@@ -8,7 +8,7 @@ import torch.nn as nn
 class UNet(nn.Module):
     def __init__(self, 
             in_channels, out_channels, 
-            n_features=4, n_blocks=3, n_layers_per_block=2,
+            n_features=8, n_blocks=3, n_layers_per_block=2, expansion=2,
         ):
         super(UNet, self).__init__()
 
@@ -18,6 +18,7 @@ class UNet(nn.Module):
         self.n_features = n_features
         self.n_blocks = n_blocks
         self.n_layers_per_block = n_layers_per_block
+        self.expansion = expansion
 
 
         ### SET UP BLOCKS ###
@@ -32,7 +33,8 @@ class UNet(nn.Module):
         self.encoder_blocks = nn.ModuleList()
         n_in = n_features
         for i in range(n_blocks):
-            n_out = n_in * 2
+            n_out = n_in * expansion
+            print(n_in, n_out)
 
             # Initialize layers
             layers = []
@@ -64,11 +66,13 @@ class UNet(nn.Module):
 
         
         # Set up decoder blocks
-        n_out = n_features * 2 ** n_blocks
+        n_in = n_features * expansion ** n_blocks
         self.decoder_blocks = nn.ModuleList()
         for i in range(n_blocks):
-            n_out = n_out // 2
-            n_in = n_out * 2 if i == 0 else n_out * 4
+            n_out = n_in // expansion
+            if i > 0:
+                n_in = n_in * 2
+            print(n_in, n_out)
 
             # Initialize layers
             layers = []
@@ -139,7 +143,7 @@ class UNet(nn.Module):
 if __name__ == '__main__':
     
     # Set up model
-    model = UNet(3, 1, n_features=8, n_blocks=3, n_layers_per_block=2)
+    model = UNet(3, 1, n_features=8, n_blocks=3, n_layers_per_block=2, expansion=1)
 
     # Print number of parameters
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))

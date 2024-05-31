@@ -171,13 +171,18 @@ def train_model(
         
         # Plot images
         if plot:
-            batch = next(iter(dataloader_train))  # Get batch
-            if segmentation:                      # Segmentation
-                x, y = batch                      # -- x is images, y is masks
-                z = model(x).argmax(dim=1)        # -- z is highest probability class
-            elif autoencoder:                     # Autoencoder
-                x, y = get_batch(batch)           # -- x is noisy images, y is clean images
-                z = model(x)                      # -- z is denoised images
+
+            # Get batch
+            batch = next(iter(dataloader_train))
+            x, y = get_batch(batch)
+
+            # Get predictions
+            if segmentation:
+                z = model(x).argmax(dim=1)
+            elif autoencoder:
+                z = model(x)
+
+            # Plot images
             plot_images(
                 Images=x[:5], 
                 Targets=y[:5], 
