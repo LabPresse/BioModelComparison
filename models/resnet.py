@@ -7,39 +7,36 @@ import torch.nn.functional as F
 
 # Define the ResNetBlock class
 class ResNetBlock(nn.Module):
-    def __init__(self, in_features, out_features, mlp_ratio=.5, stride=1, upsample=False):
+    def __init__(self, in_features, out_features, stride=1, upsample=False):
         super(ResNetBlock, self).__init__()
         
         # Set up attributes
         self.in_features = in_features
         self.out_features = out_features
-        
-        # Calculate constants
-        mid_features = int(in_features * mlp_ratio)
+        self.stride = stride
+        self.upsample = upsample
 
         # Define convolution
         if upsample:
-            convolution = nn.ConvTranspose2d(
-                mid_features, mid_features, 
-                kernel_size=3, stride=stride, padding=1, output_padding=1,
+            self.layers = nn.Sequential(
+                nn.ConvTranspose2d(
+                    in_features, out_features, 
+                    kernel_size=stride, stride=stride, output_padding=1,
+                ),
+                nn.InstanceNorm2d(out_features),
+                nn.ReLU(),
+                nn.Conv2d(out_features, out_features, kernel_size=1),
             )
         else:
-            convolution = nn.Conv2d(
-                mid_features, mid_features, 
-                kernel_size=3, stride=stride, padding=1,
+            self.layers = nn.Sequential(
+                nn.Conv2d(
+                    in_features, out_features, 
+                    kernel_size=stride, stride=stride,
+                ),
+                nn.InstanceNorm2d(out_features),
+                nn.ReLU(),
+                nn.Conv2d(out_features, out_features, kernel_size=1),
             )
-
-        # Set up multi-layer perceptron
-        self.mlp = nn.Sequential(
-            # Bottleneck
-            nn.Conv2d(in_features, mid_features, kernel_size=1, bias=False),
-            # Convolution
-            convolution,
-            nn.InstanceNorm2d(mid_features),
-            nn.ReLU(),
-            # Expansion
-            nn.Conv2d(mid_features, out_features, kernel_size=1, bias=False),
-        )
 
         # Define shortcut connection
         if (in_features == out_features) and stride == 1:
@@ -68,7 +65,7 @@ class ResNetBlock(nn.Module):
         identity = self.shortcut(x)
 
         # Apply convolution
-        x = self.mlp(x)
+        x = self.layers(x)
 
         # Add shortcut connection
         x = x + identity
@@ -115,16 +112,14 @@ class ResNet(nn.Module):
             layers = []
 
             # Downsample block
-            mlp_ratio = 1 if n_in < 8 else .5  # Do not compress below 8 features
             layers.append(
-                ResNetBlock(n_in, n_out, stride=2, mlp_ratio=mlp_ratio)
+                ResNetBlock(n_in, n_out, stride=2)
             )
 
             # Mixing layers
-            mlp_ratio = 1 if n_out < 8 else .5  # Do not compress below 8 features
             for j in range(n_layers_per_block-1):
                 layers.append(
-                    ResNetBlock(n_out, n_out, mlp_ratio=mlp_ratio)
+                    ResNetBlock(n_out, n_out)
                 )
 
             # Add to list
@@ -144,16 +139,14 @@ class ResNet(nn.Module):
             layers = []
 
             # Upsample block
-            mlp_ratio = 1 if n_in < 8 else .5  # Do not compress below 8 features
             layers.append(
-                ResNetBlock(n_in, n_out, stride=2, mlp_ratio=mlp_ratio, upsample=True)
+                ResNetBlock(n_in, n_out, stride=2, upsample=True)
             )
 
             # Mixing layers
-            mlp_ratio = 1 if n_out < 8 else .5  # Do not compress below 8 features
             for j in range(n_layers_per_block-1):
                 layers.append(
-                    ResNetBlock(n_out, n_out, mlp_ratio=mlp_ratio)
+                    ResNetBlock(n_out, n_out)
                 )
 
             # Add to list
@@ -191,7 +184,7 @@ class ResNet(nn.Module):
 if __name__ == '__main__':
     
     # Set up model
-    model = ResNet(3, 2)
+    model = ResNet(3, 2, n_blocks=4)
 
     # Print number of parameters
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))
