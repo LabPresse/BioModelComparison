@@ -182,7 +182,7 @@ if __name__ == "__main__":
         dataID, 
         savename,
         verbose=True,
-        plot=True,  # TODO: Change to False
+        n_epochs=1,  # TODO: remove
         **options
     )
 
