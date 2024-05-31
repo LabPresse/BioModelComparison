@@ -181,8 +181,6 @@ if __name__ == "__main__":
         modelID, 
         dataID, 
         savename,
-        verbose=True,
-        n_epochs=1,  # TODO: remove
         **options
     )
 
