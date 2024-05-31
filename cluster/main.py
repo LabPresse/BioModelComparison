@@ -144,7 +144,7 @@ if __name__ == "__main__":
         ['conv', {'n_layers': 16}],
         # UNet
         ['unet', {'n_blocks': 2}],
-        ['unet', {'n_blocks': 3, 'expansion': 1}],
+        ['unet', {'n_blocks': 3, 'n_features': 8, 'expansion': 1}],
         ['unet', {'n_blocks': 3}],
         # ResNet
         ['resnet', {'n_blocks': 2}],
@@ -168,7 +168,7 @@ if __name__ == "__main__":
                 all_jobs.append((modelID, dataID, options, ffcvid))
     
     # Get job id from sys
-    jobID = 0
+    jobID = 12
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
@@ -182,7 +182,8 @@ if __name__ == "__main__":
         dataID, 
         savename,
         verbose=True,
-        n_epochs=1,  # TODO: remove
+        n_epochs=100,  # TODO: remove
+        plot=True,
         **options
     )
 

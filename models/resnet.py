@@ -84,7 +84,7 @@ class ResNetBlock(nn.Module):
 class ResNet(nn.Module):
     def __init__(self,
             in_channels, out_channels,
-            n_blocks=3, n_features=8, n_layers_per_block=2, expansion=2,
+            n_blocks=3, n_features=4, n_layers_per_block=2, expansion=2,
         ):
         super(ResNet, self).__init__()
 
@@ -115,14 +115,16 @@ class ResNet(nn.Module):
             layers = []
 
             # Downsample block
+            mlp_ratio = 1 if n_in < 8 else .5  # Do not compress below 8 features
             layers.append(
-                ResNetBlock(n_in, n_out, stride=2, upsample=False)
+                ResNetBlock(n_in, n_out, stride=2, mlp_ratio=mlp_ratio)
             )
 
             # Mixing layers
+            mlp_ratio = 1 if n_out < 8 else .5  # Do not compress below 8 features
             for j in range(n_layers_per_block-1):
                 layers.append(
-                    ResNetBlock(n_out, n_out)
+                    ResNetBlock(n_out, n_out, mlp_ratio=mlp_ratio)
                 )
 
             # Add to list
@@ -142,14 +144,16 @@ class ResNet(nn.Module):
             layers = []
 
             # Upsample block
+            mlp_ratio = 1 if n_in < 8 else .5  # Do not compress below 8 features
             layers.append(
-                ResNetBlock(n_in, n_out, stride=2, upsample=True)
+                ResNetBlock(n_in, n_out, stride=2, mlp_ratio=mlp_ratio, upsample=True)
             )
 
             # Mixing layers
+            mlp_ratio = 1 if n_out < 8 else .5  # Do not compress below 8 features
             for j in range(n_layers_per_block-1):
                 layers.append(
-                    ResNetBlock(n_out, n_out)
+                    ResNetBlock(n_out, n_out, mlp_ratio=mlp_ratio)
                 )
 
             # Add to list
@@ -187,7 +191,7 @@ class ResNet(nn.Module):
 if __name__ == '__main__':
     
     # Set up model
-    model = ResNet(3, 2, n_blocks=3, n_features=8, n_layers_per_block=2)
+    model = ResNet(3, 2)
 
     # Print number of parameters
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))
