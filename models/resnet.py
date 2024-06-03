@@ -42,7 +42,7 @@ class ResNetBlock(nn.Module):
         else:
             if upsample:
                 self.shortcut = nn.Sequential(
-                    nn.GroupNorm(1, out_features),
+                    nn.GroupNorm(1, out_features, affine=False),
                     nn.ConvTranspose2d(
                         in_features, out_features, 
                         kernel_size=stride, stride=stride,
@@ -50,7 +50,7 @@ class ResNetBlock(nn.Module):
                 )
             else:
                 self.shortcut = nn.Sequential(
-                    nn.GroupNorm(1, out_features),
+                    nn.GroupNorm(1, out_features, affine=False),
                     nn.Conv2d(
                         in_features, out_features, 
                         kernel_size=stride, stride=stride,
@@ -182,7 +182,7 @@ class ResNet(nn.Module):
 if __name__ == '__main__':
     
     # Set up model
-    model = ResNet(3, 2, n_blocks=4)
+    model = ResNet(3, 2, n_features=4, n_blocks=4)
 
     # Print number of parameters
     print(sum(p.numel() for p in model.parameters() if p.requires_grad))
