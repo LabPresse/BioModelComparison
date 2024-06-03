@@ -18,25 +18,23 @@ class ResNetBlock(nn.Module):
 
         # Define convolution
         if upsample:
-            self.layers = nn.Sequential(
-                nn.ConvTranspose2d(
-                    in_features, out_features, 
-                    kernel_size=stride, stride=stride, output_padding=1,
-                ),
-                nn.InstanceNorm2d(out_features),
-                nn.ReLU(),
-                nn.Conv2d(out_features, out_features, kernel_size=1),
+            conv = nn.ConvTranspose2d(
+                in_features, out_features, 
+                kernel_size=stride, stride=stride, output_padding=1,
             )
         else:
-            self.layers = nn.Sequential(
-                nn.Conv2d(
-                    in_features, out_features, 
-                    kernel_size=stride, stride=stride,
-                ),
-                nn.InstanceNorm2d(out_features),
-                nn.ReLU(),
-                nn.Conv2d(out_features, out_features, kernel_size=1),
+            conv = nn.Conv2d(
+                in_features, out_features, 
+                kernel_size=stride, stride=stride,
             )
+        
+        # Define layers
+        self.layers = nn.Sequential(
+            conv,
+            nn.InstanceNorm2d(out_features),
+            nn.ReLU(),
+            nn.Conv2d(out_features, out_features, kernel_size=1),
+        )
 
         # Define shortcut connection
         if (in_features == out_features) and stride == 1:
@@ -44,19 +42,19 @@ class ResNetBlock(nn.Module):
         else:
             if upsample:
                 self.shortcut = nn.Sequential(
+                    nn.GroupNorm(1, out_features),
                     nn.ConvTranspose2d(
                         in_features, out_features, 
                         kernel_size=stride, stride=stride,
                     ),
-                    nn.GroupNorm(1, out_features, affine=False),
                 )
             else:
                 self.shortcut = nn.Sequential(
+                    nn.GroupNorm(1, out_features),
                     nn.Conv2d(
                         in_features, out_features, 
                         kernel_size=stride, stride=stride,
                     ),
-                    nn.GroupNorm(1, out_features, affine=False),
                 )
 
     def forward(self, x):

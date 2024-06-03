@@ -12,6 +12,7 @@ from helper_functions import plot_images, plot_roc_curve, get_savename
 from data.bdello import BdelloDataset
 from data.retinas import RetinaDataset
 from data.neurons import NeuronsDataset
+from data.letters import ChineseCharacters
 from models.conv import ConvolutionalNet
 from models.unet import UNet
 from models.resnet import ResNet
@@ -139,6 +140,8 @@ def plot_outputs(datasetID, basenames, n_images=5):
         dataset = RetinaDataset(crop=(128, 128), scale=4)
     elif datasetID == 'neurons':
         dataset = NeuronsDataset(crop=(128, 128), scale=2)
+    elif datasetID == 'letters':
+        dataset = ChineseCharacters(shape=(128, 128), sigma=0.25, max_characters=1000)
 
     # Get batch
     dataloader = DataLoader(dataset, batch_size=n_images, shuffle=True)
@@ -200,8 +203,8 @@ def plot_outputs(datasetID, basenames, n_images=5):
 if __name__ == "__main__":
 
     # Set up constants
-    datasets = ['bdello', 'neurons', 'retinas']
-    models = ['conv', 'unet', 'resnet', 'vit', 'vim']
+    datasets = ['letters', 'bdello', 'neurons', 'retinas']
+    models = ['conv', 'resnet', 'vit', 'vim']
 
     # Set up basenames for all jobs
     basenames = [f[:-5] for f in os.listdir(root) if f.endswith('.json')]
@@ -210,7 +213,7 @@ if __name__ == "__main__":
     # Set up best models
     best_params = {
         'conv': 'n_layers=8',
-        'unet': 'n_blocks=3',
+        # 'unet': 'n_blocks=3',
         'resnet': 'n_blocks=3',
         'vit': 'n_layers=6',
         'vim': 'n_layers=6',
@@ -227,31 +230,31 @@ if __name__ == "__main__":
         basenames_dataset = [f for f in basenames if datasetID in f]
         best_basenames_dataset = [f for f in best_basenames if datasetID in f]
 
-        # Plot ROC curves for best models
-        fig, ax = plot_roc_curves(best_basenames_dataset)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_roc.png'))
+        # # Plot ROC curves for best models
+        # fig, ax = plot_roc_curves(best_basenames_dataset)
+        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_roc.png'))
 
-        # Plot losses for best models
-        fig, ax = plot_losses(best_basenames_dataset)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_losses.png'))
+        # # Plot losses for best models
+        # fig, ax = plot_losses(best_basenames_dataset)
+        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_losses.png'))
 
         # Plot outputs for best models
         fig, ax = plot_outputs(datasetID, best_basenames_dataset)
         fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
 
-        # Plot ROC curves and losses for different params of each model
-        for modelID in models:
+        # # Plot ROC curves and losses for different params of each model
+        # for modelID in models:
 
-            # Get models for dataset
-            basenames_dataset_model = sorted([f for f in basenames_dataset if modelID in f])
+        #     # Get models for dataset
+        #     basenames_dataset_model = sorted([f for f in basenames_dataset if modelID in f])
 
-            # Plot ROC curves
-            fig, ax = plot_roc_curves(basenames_dataset_model)
-            fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_roc.png'))
+        #     # Plot ROC curves
+        #     fig, ax = plot_roc_curves(basenames_dataset_model)
+        #     fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_roc.png'))
 
-            # Plot losses
-            fig, ax = plot_losses(basenames_dataset_model)
-            fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_losses.png'))
+        #     # Plot losses
+        #     fig, ax = plot_losses(basenames_dataset_model)
+        #     fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_losses.png'))
 
     # Done
     print('Done.')

@@ -72,7 +72,6 @@ class UNet(nn.Module):
             n_out = n_in // expansion
             if i > 0:
                 n_in = n_in * 2
-            print(n_in, n_out)
 
             # Initialize layers
             layers = []
