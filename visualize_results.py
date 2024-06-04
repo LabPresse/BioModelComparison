@@ -24,12 +24,17 @@ root = 'cluster/outfiles/'
 figpath = 'figures/'
 
 
+# Plot training stats
+def plot_training_stats(basenames, ffcvIDs=None):
+    """Plot the losses and roc curves in a single figure."""
 
-# Plot ROC curves
-def plot_roc_curves(basenames):
+    # Set up ffcvIDs
+    if ffcvIDs is None:
+        ffcvIDs = [i for i in range(5)]
 
-    # Set up plot
-    fig, ax = plt.subplots(1, 1, squeeze=False)
+    # Set up figure
+    fig, ax = plt.subplots(1, 3, squeeze=False)
+    fig.set_size_inches(15, 5)
     plt.ion()
     plt.show()
 
@@ -44,23 +49,24 @@ def plot_roc_curves(basenames):
         acc_avg = 0
         sens_avg = 0
         spec_avg = 0
-        for ffcvid in range(1):
+        for ffcvid in ffcvIDs:
             savename = basename + f'_ffcv={ffcvid}'
             with open(os.path.join(root, f'{savename}.json'), 'r') as f:
                 statistics = json.load(f)
-            auc_avg += statistics['test_metrics']['auc_score'] / 5
-            acc_avg += statistics['test_metrics']['accuracy'] / 5
-            sens_avg += statistics['test_metrics']['sensitivity'] / 5
-            spec_avg += statistics['test_metrics']['specificity'] / 5
-
+            auc_avg += statistics['test_metrics']['auc_score'] / len(ffcvIDs)
+            acc_avg += statistics['test_metrics']['accuracy'] / len(ffcvIDs)
+            sens_avg += statistics['test_metrics']['sensitivity'] / len(ffcvIDs)
+            spec_avg += statistics['test_metrics']['specificity'] / len(ffcvIDs)
 
         # Loop over ffcv splits
-        for ffcvid in range(1):
+        for ffcvid in ffcvIDs:
 
             # Load statistics
             savename = basename + f'_ffcv={ffcvid}'
             with open(os.path.join(root, f'{savename}.json'), 'r') as f:
                 statistics = json.load(f)
+
+            ### ROC CURVE ###
 
             # Get metrics
             fpr = statistics['test_metrics']['roc_fpr']
@@ -71,60 +77,44 @@ def plot_roc_curves(basenames):
                 ('_' if ffcvid != 0 else '')
                 + f'{basename}\n'
                 + '; '.join([
-                    f'AUC={auc_avg:.3f}',
-                    f'Acc={acc_avg:.3f}',
-                    f'Sens={sens_avg:.3f}',
-                    f'Spec={spec_avg:.5f}'
+                    f'AUC={auc_avg:.2f}',
+                    f'Acc={acc_avg:.2f}',
+                    f'Sens={sens_avg:.2f}',
+                    f'Spec={spec_avg:.2f}'
                 ])
             )
 
             # Plot ROC curve
             ax[0, 0].plot(fpr, tpr, label=label, color=colors[i])
 
-    # Set labels
-    ax[0, 0].set_ylabel('TPR')
-    ax[0, 0].set_xlabel('FPR')
-    ax[0, 0].legend()
-    plt.pause(1)
-    plt.tight_layout()
-
-    # Return figure and axes
-    return fig, ax
-
-
-# Plot loss
-def plot_losses(basenames):
-
-    # Set up plot
-    fig, ax = plt.subplots(2, 1, squeeze=False, sharex=True)
-    plt.ion()
-    plt.show()
-
-    # Make list of colors the same length as model_options
-    colors = plt.cm.viridis(np.linspace(0, 1, len(basenames)))
-
-    # Loop over models and options
-    for i, basename in enumerate(basenames):
-        # Loop over ffcv splits
-        for ffcvid in range(1):
-
-            # Load statistics
-            savename = basename + f'_ffcv={ffcvid}'
-            with open(os.path.join(root, f'{savename}.json'), 'r') as f:
-                statistics = json.load(f)
+            ### LOSSES ###
 
             # Plot training and validation losses
             label = ('_' if ffcvid != 0 else '') + f'{basename}'
-            ax[0, 0].plot(statistics['train_losses'], label=label, color=colors[i])
-            ax[1, 0].plot(statistics['val_losses'], label=label, color=colors[i])
+            ax[0, 1].semilogy(statistics['train_losses'], label=label, color=colors[i])
+            ax[0, 2].semilogy(statistics['val_losses'], label=label, color=colors[i])
 
-    # Set labels
-    ax[0, 0].set_ylabel('Train Loss')
-    ax[1, 0].set_ylabel('Val Loss')
-    ax[1, 0].set_xlabel('Epoch')
+
+    # Finalize ROC plot
+    ax[0, 0].plot([0, 1], [0, 1], 'k--', label='Random')
+    ax[0, 0].set_title('ROC Curve')
+    ax[0, 0].set_ylabel('TPR')
+    ax[0, 0].set_xlabel('FPR')
     ax[0, 0].legend()
-    plt.pause(1)
+
+    # Finalize loss plots
+    ax[0, 1].set_title('Training Loss')
+    ax[0, 1].set_ylabel('Log Loss')
+    ax[0, 1].set_xlabel('Epoch')
+    ax[0, 2].set_title('Validation Loss')
+    ax[0, 2].set_ylabel('Log Loss')
+    ax[0, 2].set_xlabel('Epoch')
+    ax[0, 1].legend()
+    ax[0, 2].legend()
+
+    # Finalize figure
     plt.tight_layout()
+    plt.pause(1)
 
     # Return figure and axes
     return fig, ax
@@ -155,32 +145,38 @@ def plot_outputs(datasetID, basenames, n_images=5):
 
         # Get modelID
         modelID = basename.split('_')[0]
-        
+
+        # Extract model options
+        options = {}
+        if 'n_layers' in basename:
+            options['n_layers'] = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
+        if 'n_blocks' in basename:
+            options['n_blocks'] = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
+        if 'n_features' in basename:
+            options['n_features'] = int(basename.replace('n_features=', 'xxx').split('xxx')[1].split('_')[0])
+        if 'expansion' in basename:
+            options['expansion'] = int(basename.replace('expansion=', 'xxx').split('xxx')[1].split('_')[0])
+
         # Load model
         if 'conv' in basename:
-            n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
             model = ConvolutionalNet(
-                in_channels=in_channels, out_channels=out_channels, n_layers=n_layers
+                in_channels=in_channels, out_channels=out_channels, **options
             )
         elif 'unet' in basename:
-            n_blocks = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
             model = UNet(
-                in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks
+                in_channels=in_channels, out_channels=out_channels, **options
             )
         elif 'resnet' in basename:
-            n_blocks = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
             model = ResNet(
-                in_channels=in_channels, out_channels=out_channels, n_blocks=n_blocks
+                in_channels=in_channels, out_channels=out_channels, **options
             )
         elif 'vit' in basename:
-            n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
             model = VisionTransformer(
-                img_size=128, in_channels=in_channels, out_channels=out_channels, n_layers=n_layers
+                img_size=128, in_channels=in_channels, out_channels=out_channels, **options
             )
         elif 'vim' in basename:
-            n_layers = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
             model = VisionMamba(
-                img_size=128, in_channels=in_channels, out_channels=out_channels, n_layers=n_layers
+                img_size=128, in_channels=in_channels, out_channels=out_channels, **options
             )
 
         # Load model
@@ -193,6 +189,7 @@ def plot_outputs(datasetID, basenames, n_images=5):
         zs[modelID] = z
 
     # Plot images
+    fig = plt.figure()
     fig, ax = plot_images(Images=x, Targets=y, **zs)
 
     # Return figure and axes
@@ -204,7 +201,7 @@ if __name__ == "__main__":
 
     # Set up constants
     datasets = ['letters', 'bdello', 'neurons', 'retinas']
-    models = ['conv', 'resnet', 'vit', 'vim']
+    models = ['conv', 'unet', 'vit', 'vim',]
 
     # Set up basenames for all jobs
     basenames = [f[:-5] for f in os.listdir(root) if f.endswith('.json')]
@@ -213,48 +210,38 @@ if __name__ == "__main__":
     # Set up best models
     best_params = {
         'conv': 'n_layers=8',
-        # 'unet': 'n_blocks=3',
-        'resnet': 'n_blocks=3',
+        'unet': 'n_blocks=3',
         'vit': 'n_layers=6',
         'vim': 'n_layers=6',
     }
-    best_basenames = []
-    for modelID in models:
-        best_basenames += [f for f in basenames if modelID in f and best_params[modelID] in f]
 
+    # Set up ffvIDs
+    ffcvIDs = [0]
 
     # Loop over datasets
     for datasetID in datasets:
 
         # Get basenames for dataset
         basenames_dataset = [f for f in basenames if datasetID in f]
-        best_basenames_dataset = [f for f in best_basenames if datasetID in f]
+        best_basenames_dataset = [f'{modelID}_{datasetID}_{best_params[modelID]}' for modelID in models]
 
-        # # Plot ROC curves for best models
-        # fig, ax = plot_roc_curves(best_basenames_dataset)
-        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_roc.png'))
-
-        # # Plot losses for best models
-        # fig, ax = plot_losses(best_basenames_dataset)
-        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_losses.png'))
+        # Plot training stats for best models
+        fig, ax = plot_training_stats(best_basenames_dataset, ffcvIDs=ffcvIDs)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_training_stats.png'))
 
         # Plot outputs for best models
         fig, ax = plot_outputs(datasetID, best_basenames_dataset)
         fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
 
-        # # Plot ROC curves and losses for different params of each model
-        # for modelID in models:
+        # Plot ROC curves and losses for different params of each model
+        for modelID in models:
 
-        #     # Get models for dataset
-        #     basenames_dataset_model = sorted([f for f in basenames_dataset if modelID in f])
+            # Get models for dataset
+            basenames_dataset_model = sorted([f for f in basenames_dataset if modelID in f])
 
-        #     # Plot ROC curves
-        #     fig, ax = plot_roc_curves(basenames_dataset_model)
-        #     fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_roc.png'))
-
-        #     # Plot losses
-        #     fig, ax = plot_losses(basenames_dataset_model)
-        #     fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_losses.png'))
+            # Plot training stats
+            fig, ax = plot_training_stats(basenames_dataset_model, ffcvIDs=ffcvIDs)
+            fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_training_stats.png'))
 
     # Done
     print('Done.')

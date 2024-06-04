@@ -34,7 +34,6 @@ class UNet(nn.Module):
         n_in = n_features
         for i in range(n_blocks):
             n_out = n_in * expansion
-            print(n_in, n_out)
 
             # Initialize layers
             layers = []
