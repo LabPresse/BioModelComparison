@@ -1,13 +1,13 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "J Shepard"
-  given-names: "Bryan IV"
-- family-names: "Meysam"
-  given-names: "Tavakoli"
-- family-names: "Steve"
-  given-names: "Presse"
+  - family-names: "Shepard"
+    given-names: "Bryan IV"
+  - family-names: "Tavakoli"
+    given-names: "Meysam"
+  - family-names: "Presse"
+    given-names: "Steve"
 title: "BioModelComparison"
-version: 2.0.4
-date-released: 2024-06-13
+version: "1.0"
+date-released: "2024-06-13"
 url: "https://github.com/LabPresse/BioModelComparison"
