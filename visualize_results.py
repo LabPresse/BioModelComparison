@@ -25,92 +25,99 @@ figpath = 'figures/'
 
 
 # Plot training stats
-def plot_training_stats(basenames, ffcvIDs=None):
+def plot_training_stats(basenames_dict, ffcvIDs=None):
     """Plot the losses and roc curves in a single figure."""
 
     # Set up ffcvIDs
     if ffcvIDs is None:
         ffcvIDs = [i for i in range(5)]
 
+    # If basenames_dict is list, convert to dict
+    if isinstance(basenames_dict, list):
+        basenames_dict = {None: basenames_dict}
+    n_rows = len(basenames_dict.keys())
+
     # Set up figure
-    fig, ax = plt.subplots(1, 3, squeeze=False)
-    fig.set_size_inches(15, 5)
+    fig, ax = plt.subplots(n_rows, 3, squeeze=False)
+    fig.set_size_inches(15, 2*n_rows)
     plt.ion()
     plt.show()
 
-    # Make list of colors the same length as model_options
-    colors = plt.cm.viridis(np.linspace(0, 1, len(basenames)))
+    # Loop over keys
+    for keyid, (key, basenames_i) in enumerate(basenames_dict.items()):
 
-    # Loop over models and options
-    for i, basename in enumerate(basenames):
+        # Make list of colors the same length as model_options
+        colors = plt.cm.viridis(np.linspace(0, 1, len(basenames_i)))
 
-        # Get avg stats
-        auc_avg = 0
-        acc_avg = 0
-        sens_avg = 0
-        spec_avg = 0
-        for ffcvid in ffcvIDs:
-            savename = basename + f'_ffcv={ffcvid}'
-            with open(os.path.join(root, f'{savename}.json'), 'r') as f:
-                statistics = json.load(f)
-            auc_avg += statistics['test_metrics']['auc_score'] / len(ffcvIDs)
-            acc_avg += statistics['test_metrics']['accuracy'] / len(ffcvIDs)
-            sens_avg += statistics['test_metrics']['sensitivity'] / len(ffcvIDs)
-            spec_avg += statistics['test_metrics']['specificity'] / len(ffcvIDs)
+        # Loop over models and options
+        for i, basename in enumerate(basenames_i):
 
-        # Loop over ffcv splits
-        for ffcvid in ffcvIDs:
+            # Get avg stats
+            auc_avg = 0
+            acc_avg = 0
+            sens_avg = 0
+            spec_avg = 0
+            for ffcvid in ffcvIDs:
+                savename = basename + f'_ffcv={ffcvid}'
+                with open(os.path.join(root, f'{savename}.json'), 'r') as f:
+                    statistics = json.load(f)
+                auc_avg += statistics['test_metrics']['auc_score'] / len(ffcvIDs)
+                acc_avg += statistics['test_metrics']['accuracy'] / len(ffcvIDs)
+                sens_avg += statistics['test_metrics']['sensitivity'] / len(ffcvIDs)
+                spec_avg += statistics['test_metrics']['specificity'] / len(ffcvIDs)
 
-            # Load statistics
-            savename = basename + f'_ffcv={ffcvid}'
-            with open(os.path.join(root, f'{savename}.json'), 'r') as f:
-                statistics = json.load(f)
+            # Loop over ffcv splits
+            for ffcvid in ffcvIDs:
 
-            ### ROC CURVE ###
+                # Load statistics
+                savename = basename + f'_ffcv={ffcvid}'
+                with open(os.path.join(root, f'{savename}.json'), 'r') as f:
+                    statistics = json.load(f)
 
-            # Get metrics
-            fpr = statistics['test_metrics']['roc_fpr']
-            tpr = statistics['test_metrics']['roc_tpr']
+                ### LOSSES ###
 
-            # Set label
-            label = (
-                ('_' if ffcvid != 0 else '')
-                + f'{basename}\n'
-                + '; '.join([
-                    f'AUC={auc_avg:.2f}',
-                    f'Acc={acc_avg:.2f}',
-                    f'Sens={sens_avg:.2f}',
-                    f'Spec={spec_avg:.2f}'
-                ])
-            )
+                # Plot training and validation losses
+                label = ('_' if ffcvid != 0 else '') + f'{basename}'
+                ax[keyid, 0].semilogy(statistics['train_losses'], label=label, color=colors[i])
+                ax[keyid, 1].semilogy(statistics['val_losses'], label=label, color=colors[i])
 
-            # Plot ROC curve
-            ax[0, 0].plot(fpr, tpr, label=label, color=colors[i])
+                ### ROC CURVE ###
 
-            ### LOSSES ###
+                # Get metrics
+                fpr = statistics['test_metrics']['roc_fpr']
+                tpr = statistics['test_metrics']['roc_tpr']
 
-            # Plot training and validation losses
-            label = ('_' if ffcvid != 0 else '') + f'{basename}'
-            ax[0, 1].semilogy(statistics['train_losses'], label=label, color=colors[i])
-            ax[0, 2].semilogy(statistics['val_losses'], label=label, color=colors[i])
+                # Set label
+                label = (
+                    ('_' if ffcvid != 0 else '')
+                    + f'{basename}\n'
+                    + '; '.join([
+                        f'AUC={auc_avg:.3f}',
+                        f'Acc={acc_avg:.3f}',
+                        f'Sens={sens_avg:.3f}',
+                        f'Spec={spec_avg:.4f}'
+                    ])
+                )
 
+                # Plot ROC curve
+                ax[keyid, 2].plot(fpr, tpr, label=label, color=colors[i])
 
-    # Finalize ROC plot
-    ax[0, 0].plot([0, 1], [0, 1], 'k--', label='Random')
-    ax[0, 0].set_title('ROC Curve')
-    ax[0, 0].set_ylabel('TPR')
-    ax[0, 0].set_xlabel('FPR')
-    ax[0, 0].legend()
+        # Get prefix
+        prefix = '' if key is None else f'{key.upper()}\n'
 
-    # Finalize loss plots
-    ax[0, 1].set_title('Training Loss')
-    ax[0, 1].set_ylabel('Log Loss')
-    ax[0, 1].set_xlabel('Epoch')
-    ax[0, 2].set_title('Validation Loss')
-    ax[0, 2].set_ylabel('Log Loss')
-    ax[0, 2].set_xlabel('Epoch')
-    ax[0, 1].legend()
-    ax[0, 2].legend()
+        # Finalize loss plots
+        if keyid == 0:
+            ax[keyid, 0].set_title('Training Loss')
+            ax[keyid, 1].set_title('Validation Loss')
+            ax[keyid, 2].set_title('ROC Curve')
+            ax[keyid, 0].set_xlabel('Epoch')
+            ax[keyid, 1].set_xlabel('Epoch')
+            ax[keyid, 2].set_xlabel('FPR')
+        ax[keyid, 0].set_ylabel(prefix+'Log Loss')
+        ax[keyid, 1].set_ylabel('Log Loss')
+        ax[keyid, 2].set_ylabel('TPR')
+        ax[keyid, 2].plot([0, 1], [0, 1], 'k--', label='Random')
+        ax[keyid, -1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
     # Finalize figure
     plt.tight_layout()
@@ -135,7 +142,11 @@ def plot_outputs(datasetID, basenames, n_images=5):
 
     # Get batch
     dataloader = DataLoader(dataset, batch_size=n_images, shuffle=True)
-    x, y = next(iter(dataloader))
+    tries = 0
+    while tries < 10:
+        x, y = next(iter(dataloader))
+        if len(np.unique(y)) > 1:
+            break
     in_channels = x.shape[1]
     out_channels = 2
 
@@ -190,6 +201,8 @@ def plot_outputs(datasetID, basenames, n_images=5):
 
     # Plot images
     fig = plt.figure()
+    plt.ion()
+    plt.show()
     fig, ax = plot_images(Images=x, Targets=y, **zs)
 
     # Return figure and axes
@@ -207,41 +220,46 @@ if __name__ == "__main__":
     basenames = [f[:-5] for f in os.listdir(root) if f.endswith('.json')]
     basenames = [f[:-7] for f in basenames if f.endswith('ffcv=0')]
 
-    # Set up best models
-    best_params = {
-        'conv': 'n_layers=8',
-        'unet': 'n_blocks=3',
-        'vit': 'n_layers=6',
-        'vim': 'n_layers=6',
-    }
-
     # Set up ffvIDs
     ffcvIDs = [0]
 
     # Loop over datasets
     for datasetID in datasets:
 
-        # Get basenames for dataset
-        basenames_dataset = [f for f in basenames if datasetID in f]
-        best_basenames_dataset = [f'{modelID}_{datasetID}_{best_params[modelID]}' for modelID in models]
+        # Loop over models
+        best_basenames_dataset = []
+        basenames_dataset_dict = {}
+        for modelID in models:
 
-        # Plot training stats for best models
-        fig, ax = plot_training_stats(best_basenames_dataset, ffcvIDs=ffcvIDs)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_training_stats.png'))
+            # Get model basenames
+            basenames_dataset = [f for f in basenames if datasetID in f]
+            basenames_dataset_model = sorted([f for f in basenames_dataset if modelID in f])
+            basenames_dataset_dict[modelID] = basenames_dataset_model
+            
+            # Get best model
+            best_loss = None
+            best_model = None
+            for basename in basenames_dataset_model:
+                with open(os.path.join(root, f'{basename}_ffcv=0.json'), 'r') as f:
+                    statistics = json.load(f)
+                if (best_loss is None) or (statistics['min_val_loss'] < best_loss):
+                    best_loss = statistics['min_val_loss']
+                    best_model = basename
+            
+            # Add best model to list
+            best_basenames_dataset.append(best_model)
 
         # Plot outputs for best models
         fig, ax = plot_outputs(datasetID, best_basenames_dataset)
         fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
 
-        # Plot ROC curves and losses for different params of each model
-        for modelID in models:
+        # Plot training stats for best models
+        fig, ax = plot_training_stats(best_basenames_dataset, ffcvIDs=ffcvIDs)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_training_stats.png'))
 
-            # Get models for dataset
-            basenames_dataset_model = sorted([f for f in basenames_dataset if modelID in f])
-
-            # Plot training stats
-            fig, ax = plot_training_stats(basenames_dataset_model, ffcvIDs=ffcvIDs)
-            fig.savefig(os.path.join(figpath, f'{datasetID}_{modelID}_training_stats.png'))
+        # Plot all training stats
+        fig, ax = plot_training_stats(basenames_dataset_dict, ffcvIDs=ffcvIDs)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_all_training_stats.png'))
 
     # Done
     print('Done.')

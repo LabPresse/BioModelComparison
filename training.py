@@ -85,7 +85,7 @@ def train_model(
     for epoch in range(n_epochs):
         t = time.time()
         if verbose:
-            print(f'Epoch {epoch+1}/{n_epochs}')
+            print(f'Model -- {savepath.split("/")[-1]}\nEpoch {epoch+1}/{n_epochs}')
 
         # Initialize loss
         total_train_loss = 0
@@ -110,7 +110,7 @@ def train_model(
             optimizer.step()
 
             # Update loss
-            total_train_loss += loss.item()
+            total_train_loss += float(loss.item())
 
             # Print status
             if verbose and (
@@ -136,7 +136,7 @@ def train_model(
             x, y = get_batch(batch)                            # Get batch
             output = model(x)                                  # Get output
             loss = criterion(output, y)                        # Calculate loss
-            total_val_loss += loss.item()                      # Update loss
+            total_val_loss += float(loss.item())               # Update loss
             if verbose and (
                     (i == 0)                                   # Print first
                     or (i == len(dataloader_val) - 1)          # Print last
@@ -151,6 +151,8 @@ def train_model(
                 print(status)  # Print status
     
         # Save model if validation loss is lower
+        if verbose:
+            print('Updating model')
         if total_val_loss < min_val_loss:
             min_val_loss = total_val_loss
             torch.save(model.state_dict(), savepath)

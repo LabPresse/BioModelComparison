@@ -140,7 +140,7 @@ def run_training_scheme(
 if __name__ == "__main__":
         
     # Set up datasets, models, and options
-    datasets = ['retinas', 'letters', 'bdello', 'neurons',]
+    datasets = ['neurons', 'retinas', 'letters', 'bdello', ]
     model_options = [
         # ConvolutionalNet
         ['conv', {'n_layers': 8}],
@@ -158,7 +158,7 @@ if __name__ == "__main__":
         ['vit', {'n_layers': 4}],
         ['vit', {'n_layers': 6}],
         ['vit', {'n_layers': 8}],
-        # # VisionMamba
+        # VisionMamba
         ['vim', {'n_layers': 4}],
         ['vim', {'n_layers': 6}],
         ['vim', {'n_layers': 8}],
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     # Set up all jobs
     all_jobs = []
-    for ffcvid in range(1):                         # 5-fold cross-validation TODO: Change to 5
+    for ffcvid in range(1,5):                       # 5-fold cross-validation TODO: Change to 5
         for dataID in datasets:                     # Datasets
             for modelID, options in model_options:  # Models
                 all_jobs.append((modelID, dataID, options, ffcvid))
@@ -179,12 +179,17 @@ if __name__ == "__main__":
     # Get job parameters
     modelID, dataID, options, ffcvid = all_jobs[jobID]
     savename = get_savename(modelID, dataID, options, ffcvid)
+    if modelID == 'conv' or modelID == 'unet':
+        n_epochs = 500
+    else:
+        n_epochs = 100
     
     # Run training scheme
     run_training_scheme(
         modelID, 
         dataID, 
         savename,
+        n_epochs=n_epochs,
         **options
     )
     
