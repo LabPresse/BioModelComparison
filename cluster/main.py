@@ -150,10 +150,6 @@ if __name__ == "__main__":
         ['unet', {'n_blocks': 2}],
         ['unet', {'n_blocks': 3}],
         ['unet', {'n_blocks': 4}],
-        # ResNet
-        ['resnet', {'n_blocks': 2}],
-        ['resnet', {'n_blocks': 3}],
-        ['resnet', {'n_blocks': 4}],
         # VisionTransformer
         ['vit', {'n_layers': 4}],
         ['vit', {'n_layers': 6}],
