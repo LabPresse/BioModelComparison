@@ -59,8 +59,12 @@ def plot_training_stats(basenames_dict, ffcvIDs=None):
             spec_avg = 0
             for ffcvid in ffcvIDs:
                 savename = basename + f'_ffcv={ffcvid}'
-                with open(os.path.join(root, f'{savename}.json'), 'r') as f:
-                    statistics = json.load(f)
+                try:
+                    with open(os.path.join(root, f'{savename}.json'), 'r') as f:
+                        statistics = json.load(f)
+                except:
+                    print(f'Could not load {savename}.json')
+                    continue
                 auc_avg += statistics['test_metrics']['auc_score'] / len(ffcvIDs)
                 acc_avg += statistics['test_metrics']['accuracy'] / len(ffcvIDs)
                 sens_avg += statistics['test_metrics']['sensitivity'] / len(ffcvIDs)
@@ -71,8 +75,11 @@ def plot_training_stats(basenames_dict, ffcvIDs=None):
 
                 # Load statistics
                 savename = basename + f'_ffcv={ffcvid}'
-                with open(os.path.join(root, f'{savename}.json'), 'r') as f:
-                    statistics = json.load(f)
+                try:
+                    with open(os.path.join(root, f'{savename}.json'), 'r') as f:
+                        statistics = json.load(f)
+                except:
+                    continue
 
                 ### LOSSES ###
 
@@ -145,7 +152,7 @@ def plot_outputs(datasetID, basenames, n_images=5):
     tries = 0
     while tries < 10:
         x, y = next(iter(dataloader))
-        if len(np.unique(y)) > 1:
+        if (y.sum(axis=(1, 2)) > 0).sum(axis=0) >=3:
             break
     in_channels = x.shape[1]
     out_channels = 2
@@ -203,7 +210,7 @@ def plot_outputs(datasetID, basenames, n_images=5):
     fig = plt.figure()
     plt.ion()
     plt.show()
-    fig, ax = plot_images(Images=x, Targets=y, **zs)
+    fig, ax = plot_images(Images=x, Targets=y, **zs, transpose=True)
 
     # Return figure and axes
     return fig, ax
@@ -213,15 +220,12 @@ def plot_outputs(datasetID, basenames, n_images=5):
 if __name__ == "__main__":
 
     # Set up constants
-    datasets = ['letters', 'bdello', 'neurons', 'retinas']
+    datasets = ['bdello', 'letters', 'neurons', 'retinas']
     models = ['conv', 'unet', 'vit', 'vim',]
 
     # Set up basenames for all jobs
     basenames = [f[:-5] for f in os.listdir(root) if f.endswith('.json')]
     basenames = [f[:-7] for f in basenames if f.endswith('ffcv=0')]
-
-    # Set up ffvIDs
-    ffcvIDs = [0]
 
     # Loop over datasets
     for datasetID in datasets:
@@ -249,16 +253,16 @@ if __name__ == "__main__":
             # Add best model to list
             best_basenames_dataset.append(best_model)
 
-        # Plot outputs for best models
-        fig, ax = plot_outputs(datasetID, best_basenames_dataset)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
+        # # Plot outputs for best models
+        # fig, ax = plot_outputs(datasetID, best_basenames_dataset)
+        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
 
-        # Plot training stats for best models
-        fig, ax = plot_training_stats(best_basenames_dataset, ffcvIDs=ffcvIDs)
-        fig.savefig(os.path.join(figpath, f'{datasetID}_best_training_stats.png'))
+        # # Plot training stats for best models
+        # fig, ax = plot_training_stats(best_basenames_dataset)
+        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_training_stats.png'))
 
         # Plot all training stats
-        fig, ax = plot_training_stats(basenames_dataset_dict, ffcvIDs=ffcvIDs)
+        fig, ax = plot_training_stats(basenames_dataset_dict)
         fig.savefig(os.path.join(figpath, f'{datasetID}_all_training_stats.png'))
 
     # Done

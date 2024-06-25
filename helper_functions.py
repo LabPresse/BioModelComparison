@@ -153,7 +153,7 @@ def check_tensor(x, verbose=False):
 
 # Plot tensors function
 @torch.no_grad()
-def plot_images(images=None, col_labels=None, **image_dict):
+def plot_images(images=None, labels=None, transpose=False, **image_dict):
 
     # Set up image_dict
     if images is not None:
@@ -175,25 +175,30 @@ def plot_images(images=None, col_labels=None, **image_dict):
             raise ValueError("All image arrays must have the same number of images.")
 
     # Set up colunm labels
-    if col_labels is None:
-        col_labels = [f'Image {i}' for i in range(num_images)]
+    if labels is None:
+        labels = [f'Image {i}' for i in range(num_images)]
+
+    # Transpose images if necessary
+    if not transpose:
+        num_rows = num_arrays
+        num_cols = num_images
+    else:
+        num_rows = num_images
+        num_cols = num_arrays
 
     # Get figure
     fig = plt.gcf()
-    fig.set_size_inches(num_images, num_arrays)
+    fig.set_size_inches(num_cols, num_rows)
     plt.clf()
     plt.ion()
     plt.show()
-    ax = np.empty((num_arrays, num_images), dtype=object)
+    ax = np.empty((num_rows, num_cols), dtype=object)
     for i in range(ax.shape[0]):
         for j in range(ax.shape[1]):
             ax[i, j] = fig.add_subplot(ax.shape[0], ax.shape[1], i * ax.shape[1] + j + 1)
 
     # Loop over image lists
     for i, (key, val) in enumerate(image_dict.items()):
-
-        # Set label
-        ax[i, 0].set_ylabel(key)
 
         # Loop over images
         for j in range(val.shape[0]):
@@ -219,12 +224,26 @@ def plot_images(images=None, col_labels=None, **image_dict):
                 img = img / img.max()
 
             # Plot image
-            ax[i, j].imshow(img)
+            if transpose:
+                ax[j, i].imshow(img)
+            else:
+                ax[i, j].imshow(img)
 
     # Finalize plot
+    if transpose:
+        # Rows are image indices, columns are image keys
+        for i in range(ax.shape[0]):
+            ax[i, 0].set_ylabel(labels[i])
+        for j in range(ax.shape[1]):
+            ax[0, j].set_title(list(image_dict.keys())[j])
+    else:
+        # Rows are image keys, columns are image indices
+        for i in range(ax.shape[0]):
+            ax[i, 0].set_ylabel(list(image_dict.keys())[i])
+        for j in range(ax.shape[1]):
+            ax[0, j].set_title(labels[j])
     for i in range(ax.shape[0]):
         for j in range(ax.shape[1]):
-            ax[0, j].set_title(col_labels[j])
             ax[i, j].set_xticks([])
             ax[i, j].set_yticks([])
     plt.tight_layout()
