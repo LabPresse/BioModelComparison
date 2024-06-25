@@ -45,9 +45,6 @@ def get_retina_dataset():
         print("Extraction completed successfully.")
     except rarfile.Error as e:
         print("Failed to extract the file:", e)
-    
-    # Remove rar file
-    os.remove(download_path)
 
     # Move images to base directory
     default_path = os.path.join(path_data, 'FIVES A Fundus Image Dataset for AI-based Vessel Segmentation')
@@ -66,8 +63,9 @@ def get_retina_dataset():
             )
             i += 1
 
-    # Remove default_path
+    # Remove paths
     shutil.rmtree(default_path)
+    os.remove(download_path)
     
     # Done
     print('Finished downloading retina dataset')
