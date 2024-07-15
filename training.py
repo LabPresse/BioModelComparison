@@ -42,11 +42,11 @@ def train_model(
     dataset_train, dataset_val, _ = datasets
     dataloader_train = DataLoader(
         dataset_train, batch_size=batch_size, shuffle=True, 
-        # num_workers=os.cpu_count(), pin_memory=True  # For local machine
+        # num_workers=os.cpu_count(), pin_memory=True  # Uncomment for local machine
     )
     dataloader_val = DataLoader(
         dataset_val, batch_size=batch_size, shuffle=False, 
-        # num_workers=os.cpu_count(), pin_memory=True  # For local machine
+        # num_workers=os.cpu_count(), pin_memory=True  # Uncomment for local machine
     )
 
     # Set up optimizer
@@ -58,6 +58,13 @@ def train_model(
         criterion = nn.CrossEntropyLoss()
     elif autoencoder:
         criterion = nn.MSELoss()
+
+    # Set up regularization
+    def regularization(model):
+        return (
+            sum(p.pow(2.0).sum() for p in model.parameters()) 
+            / sum(p.numel() for p in model.parameters())
+        )
 
     # Get batch function
     def get_batch(batch):
@@ -102,7 +109,7 @@ def train_model(
             output = model(x)
 
             # Calculate loss
-            loss = criterion(output, y)
+            loss = criterion(output, y) + regularization(model)
 
             # Backward pass
             loss.backward()

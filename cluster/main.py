@@ -140,8 +140,7 @@ def run_training_scheme(
 if __name__ == "__main__":
         
     # Set up datasets, models, and options
-    # datasets = ['neurons', 'retinas', 'letters', 'bdello']
-    datasets = ['retinas', 'letters', 'bdello']
+    datasets = ['neurons', 'retinas', 'letters', 'bdello']
     model_options = [
         # ConvolutionalNet
         ['conv', {'n_layers': 8}],
@@ -151,14 +150,14 @@ if __name__ == "__main__":
         ['unet', {'n_blocks': 2}],
         ['unet', {'n_blocks': 3}],
         ['unet', {'n_blocks': 4}],
-        # # VisionTransformer
-        # ['vit', {'n_layers': 4}],
-        # ['vit', {'n_layers': 6}],
-        # ['vit', {'n_layers': 8}],
-        # # VisionMamba
-        # ['vim', {'n_layers': 4}],
-        # ['vim', {'n_layers': 6}],
-        # ['vim', {'n_layers': 8}],
+        # VisionTransformer
+        ['vit', {'n_layers': 4}],
+        ['vit', {'n_layers': 6}],
+        ['vit', {'n_layers': 8}],
+        # VisionMamba
+        ['vim', {'n_layers': 4}],
+        ['vim', {'n_layers': 6}],
+        ['vim', {'n_layers': 8}],
     ]
 
     # Set up all jobs
@@ -173,10 +172,13 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
+    # # Loop through all jobs
+    # for jobID in range(len(all_jobs)):
+
     # Get job parameters
     modelID, dataID, options, ffcvid = all_jobs[jobID]
     savename = get_savename(modelID, dataID, options, ffcvid)
-    if modelID == 'neurons' and (modelID == 'conv' or modelID == 'unet'):
+    if dataID == 'neurons' and (modelID == 'conv' or modelID == 'unet'):
         n_epochs = 500
     else:
         n_epochs = 100
