@@ -86,18 +86,22 @@ def get_bdello_datset():
     )
 
     # Move images to base directory
-    oldpath = os.path.join(path_data, 'Cleaned', 'images')
-    newpath = os.path.join(path_data, 'images')
-    files = [f for f in os.listdir(oldpath) if f.lower().endswith('.png')]
+    oldpath_img = os.path.join(path_data, 'Cleaned', 'images')
+    oldpath_mask = os.path.join(path_data, 'Cleaned', 'masks')
+    newpath_img = os.path.join(path_data, 'images')
+    newpath_mask = os.path.join(path_data, 'masks')
+    files = [f for f in os.listdir(oldpath_img) if f.lower().endswith('.png')]
+    i = 0
     for file in files:
-        os.rename(os.path.join(oldpath, file), os.path.join(newpath, file))
-
-    # Move masks to base directory
-    oldpath = os.path.join(path_data, 'Cleaned', 'masks')
-    newpath = os.path.join(path_data, 'masks')
-    files = [f for f in os.listdir(oldpath) if f.lower().endswith('.png')]
-    for file in files:
-        os.rename(os.path.join(oldpath, file), os.path.join(newpath, file))
+        os.rename(
+            os.path.join(oldpath_img, file),
+            os.path.join(newpath_img, f"img{i}.png")
+        )
+        os.rename(
+            os.path.join(oldpath_mask, file),
+            os.path.join(newpath_mask, f"img{i}.png")
+        )
+        i += 1
 
     # Remove old directories
     shutil.rmtree(os.path.join(path_data, 'Cleaned'))
