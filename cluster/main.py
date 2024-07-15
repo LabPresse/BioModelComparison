@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     # Set up all jobs
     all_jobs = []
-    for ffcvid in range(1,5):                       # 5-fold cross-validation TODO: Change to 5
+    for ffcvid in range(5):                         # 5-fold cross-validation 
         for dataID in datasets:                     # Datasets
             for modelID, options in model_options:  # Models
                 all_jobs.append((modelID, dataID, options, ffcvid))
