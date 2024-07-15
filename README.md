@@ -26,10 +26,10 @@ Linux (e.g., Ubuntu/Debian)
 sudo apt-get install unrar
 ```
 
-For macOS:
+For macOS you can download `rar` or any other unrar-ing tools:
 
 ```bash
-brew install unrar
+brew install rar
 ```
 
 Once you have your API key and rar, you can download the datasets by running the following commands in your terminal:

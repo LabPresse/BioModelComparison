@@ -8,7 +8,6 @@ from einops import rearrange, einsum
 from zeta.nn.modules.p_scan import pscan
 
 
-
 # Define Mamba block
 class MambaBlock(nn.Module):
     def __init__(self, n_features, n_states, expansion=1):

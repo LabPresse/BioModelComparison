@@ -25,7 +25,7 @@ figpath = 'figures/'
 
 
 # Plot training stats
-def plot_training_stats(basenames_dict, ffcvIDs=None):
+def plot_training_stats(basenames_dict, ffcvIDs=None, model_labels=None):
     """Plot the losses and roc curves in a single figure."""
 
     # Set up ffcvIDs
@@ -37,9 +37,13 @@ def plot_training_stats(basenames_dict, ffcvIDs=None):
         basenames_dict = {None: basenames_dict}
     n_rows = len(basenames_dict.keys())
 
+    # Set up model_labels
+    if model_labels is None:
+        model_labels = {basename: basename for basename in basenames_dict.values()}
+
     # Set up figure
     fig, ax = plt.subplots(n_rows, 3, squeeze=False)
-    fig.set_size_inches(15, 2*n_rows)
+    fig.set_size_inches(15, 4*n_rows)
     plt.ion()
     plt.show()
 
@@ -53,10 +57,15 @@ def plot_training_stats(basenames_dict, ffcvIDs=None):
         for i, basename in enumerate(basenames_i):
 
             # Get avg stats
+            n_avg = 0
             auc_avg = 0
             acc_avg = 0
             sens_avg = 0
             spec_avg = 0
+            loss_train_avg = 0
+            loss_val_avg = 0
+            fpr_base = np.linspace(0, 1, 500)
+            tpr_avg = np.zeros(500)
             for ffcvid in ffcvIDs:
                 savename = basename + f'_ffcv={ffcvid}'
                 try:
@@ -65,49 +74,42 @@ def plot_training_stats(basenames_dict, ffcvIDs=None):
                 except:
                     print(f'Could not load {savename}.json')
                     continue
-                auc_avg += statistics['test_metrics']['auc_score'] / len(ffcvIDs)
-                acc_avg += statistics['test_metrics']['accuracy'] / len(ffcvIDs)
-                sens_avg += statistics['test_metrics']['sensitivity'] / len(ffcvIDs)
-                spec_avg += statistics['test_metrics']['specificity'] / len(ffcvIDs)
-
-            # Loop over ffcv splits
-            for ffcvid in ffcvIDs:
-
-                # Load statistics
-                savename = basename + f'_ffcv={ffcvid}'
-                try:
-                    with open(os.path.join(root, f'{savename}.json'), 'r') as f:
-                        statistics = json.load(f)
-                except:
-                    continue
-
-                ### LOSSES ###
-
-                # Plot training and validation losses
-                label = ('_' if ffcvid != 0 else '') + f'{basename}'
-                ax[keyid, 0].semilogy(statistics['train_losses'], label=label, color=colors[i])
-                ax[keyid, 1].semilogy(statistics['val_losses'], label=label, color=colors[i])
-
-                ### ROC CURVE ###
-
-                # Get metrics
-                fpr = statistics['test_metrics']['roc_fpr']
-                tpr = statistics['test_metrics']['roc_tpr']
-
-                # Set label
-                label = (
-                    ('_' if ffcvid != 0 else '')
-                    + f'{basename}\n'
-                    + '; '.join([
-                        f'AUC={auc_avg:.3f}',
-                        f'Acc={acc_avg:.3f}',
-                        f'Sens={sens_avg:.3f}',
-                        f'Spec={spec_avg:.4f}'
-                    ])
+                n_avg += 1
+                auc_avg += statistics['test_metrics']['auc_score']
+                acc_avg += statistics['test_metrics']['accuracy']
+                sens_avg += statistics['test_metrics']['sensitivity']
+                spec_avg += statistics['test_metrics']['specificity']
+                loss_train_avg += np.array(statistics['train_losses'][:100])
+                loss_val_avg += np.array(statistics['val_losses'][:100])
+                tpr_avg += np.interp(
+                    fpr_base, 
+                    statistics['test_metrics']['roc_fpr'], 
+                    statistics['test_metrics']['roc_tpr']
                 )
+                n_parameters = statistics['n_parameters']
+            auc_avg /= n_avg
+            acc_avg /= n_avg
+            sens_avg /= n_avg
+            spec_avg /= n_avg
+            loss_train_avg /= n_avg
+            loss_val_avg /= n_avg
+            tpr_avg /= n_avg
+            tpr_avg[0] = 0
 
-                # Plot ROC curve
-                ax[keyid, 2].plot(fpr, tpr, label=label, color=colors[i])
+            # Make label
+            label = (
+                f'{model_labels[basename]}\n'
+                + '\n'.join([
+                    f'{n_parameters} parameters',
+                    f'AUC={auc_avg:.3f}; SENS={sens_avg:.3f}',
+                    f'ACC={acc_avg:.3f}; SPEC={spec_avg:.4f}'
+                ])
+            )
+
+            # Plot curves
+            ax[keyid, 0].semilogy(loss_train_avg, color=colors[i])
+            ax[keyid, 1].semilogy(loss_val_avg, color=colors[i])
+            ax[keyid, 2].plot(fpr_base, tpr_avg, label=label, color=colors[i])
 
         # Get prefix
         prefix = '' if key is None else f'{key.upper()}\n'
@@ -119,10 +121,10 @@ def plot_training_stats(basenames_dict, ffcvIDs=None):
             ax[keyid, 2].set_title('ROC Curve')
             ax[keyid, 0].set_xlabel('Epoch')
             ax[keyid, 1].set_xlabel('Epoch')
-            ax[keyid, 2].set_xlabel('FPR')
+            ax[keyid, 2].set_xlabel('False Positive Rate')
         ax[keyid, 0].set_ylabel(prefix+'Log Loss')
         ax[keyid, 1].set_ylabel('Log Loss')
-        ax[keyid, 2].set_ylabel('TPR')
+        ax[keyid, 2].set_ylabel('True Positive Rate')
         ax[keyid, 2].plot([0, 1], [0, 1], 'k--', label='Random')
         ax[keyid, -1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
@@ -135,15 +137,19 @@ def plot_training_stats(basenames_dict, ffcvIDs=None):
 
 
 # Plot outputs
-def plot_outputs(datasetID, basenames, n_images=5):
+def plot_outputs(datasetID, basenames, n_images=3, model_labels=None):
+
+    # Set up model_labels
+    if model_labels is None:
+        model_labels = {basename: basename.split('_')[0] for basename in basenames}
 
     # Get dataset
     if datasetID == 'bdello':
         dataset = BdelloDataset(crop=(128, 128), scale=4)
     elif datasetID == 'retinas':
-        dataset = RetinaDataset(crop=(128, 128), scale=4)
+        dataset = RetinaDataset(crop=(512, 512), scale=4)
     elif datasetID == 'neurons':
-        dataset = NeuronsDataset(crop=(128, 128), scale=2)
+        dataset = NeuronsDataset(crop=(512, 512), scale=2)
     elif datasetID == 'letters':
         dataset = ChineseCharacters(shape=(128, 128), sigma=0.25, max_characters=1000)
 
@@ -160,9 +166,6 @@ def plot_outputs(datasetID, basenames, n_images=5):
     # Loop over models and options
     zs = {}
     for i, basename in enumerate(basenames):
-
-        # Get modelID
-        modelID = basename.split('_')[0]
 
         # Extract model options
         options = {}
@@ -199,12 +202,25 @@ def plot_outputs(datasetID, basenames, n_images=5):
 
         # Load model
         savename = f'{basename}_ffcv=0'
-        model.load_state_dict(torch.load(os.path.join(root, f'{savename}.pth')), strict=False)
+        model.load_state_dict(
+            torch.load(
+                os.path.join(root, f'{savename}.pth'),
+                map_location=torch.device('cpu'),
+            ), 
+            strict=False
+        )
         model.eval()
-        
-        # Get predictions
-        z = model(x).detach().cpu().numpy().argmax(axis=1)
-        zs[modelID] = z
+
+        # Split x into 128x128 patches and get predictions
+        z = np.zeros((x.shape[0], x.shape[2], x.shape[3]))
+        for i in range(x.shape[2]//128):
+            for j in range(x.shape[3]//128):
+                x_patch = x[:, :, i*128:(i+1)*128, j*128:(j+1)*128]
+                z_patch = model(x_patch).detach().cpu().numpy().argmax(axis=1)
+                z[:, i*128:(i+1)*128, j*128:(j+1)*128] = z_patch
+
+        # Add to zs
+        zs[model_labels[basename]] = z
 
     # Plot images
     fig = plt.figure()
@@ -227,6 +243,41 @@ if __name__ == "__main__":
     basenames = [f[:-5] for f in os.listdir(root) if f.endswith('.json')]
     basenames = [f[:-7] for f in basenames if f.endswith('ffcv=0')]
 
+    # Set up model labels
+    model_labels_best = {}
+    model_labels_all = {}
+    for basename in basenames:
+
+        # Extract model features
+        options = {}
+        modelID = basename.split('_')[0]
+        if 'n_layers' in basename:
+            options['n_layers'] = int(basename.replace('n_layers=', 'xxx').split('xxx')[1].split('_')[0])
+        if 'n_blocks' in basename:
+            options['n_blocks'] = int(basename.replace('n_blocks=', 'xxx').split('xxx')[1].split('_')[0])
+        if 'n_features' in basename:
+            options['n_features'] = int(basename.replace('n_features=', 'xxx').split('xxx')[1].split('_')[0])
+        if 'expansion' in basename:
+            options['expansion'] = int(basename.replace('expansion=', 'xxx').split('xxx')[1].split('_')[0])
+
+        # Set up model labels
+        if modelID == 'conv':
+            label_best = 'CNN'
+            label_all = f"CNN -- {options['n_layers']} Layers"
+        elif modelID == 'unet':
+            label_best = 'UNet'
+            label_all = f"UNet -- {options['n_blocks']} Blocks"
+        elif modelID == 'vit':
+            label_best = 'ViT'
+            label_all = f"ViT -- {options['n_layers']} Layers"
+        elif modelID == 'vim':
+            label_best = 'VSSM'
+            label_all = f"VSSM -- {options['n_layers']} Layers"
+
+        # Add to model labels
+        model_labels_best[basename] = label_best
+        model_labels_all[basename] = label_all
+
     # Loop over datasets
     for datasetID in datasets:
 
@@ -244,8 +295,12 @@ if __name__ == "__main__":
             best_loss = None
             best_model = None
             for basename in basenames_dataset_model:
+
+                # Load statistics
                 with open(os.path.join(root, f'{basename}_ffcv=0.json'), 'r') as f:
                     statistics = json.load(f)
+
+                # Update best model
                 if (best_loss is None) or (statistics['min_val_loss'] < best_loss):
                     best_loss = statistics['min_val_loss']
                     best_model = basename
@@ -253,16 +308,16 @@ if __name__ == "__main__":
             # Add best model to list
             best_basenames_dataset.append(best_model)
 
-        # # Plot outputs for best models
-        # fig, ax = plot_outputs(datasetID, best_basenames_dataset)
-        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'))
+        # Plot outputs for best models
+        fig, ax = plot_outputs(datasetID, best_basenames_dataset, model_labels=model_labels_best)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_outputs.png'), dpi=900)
 
-        # # Plot training stats for best models
-        # fig, ax = plot_training_stats(best_basenames_dataset)
-        # fig.savefig(os.path.join(figpath, f'{datasetID}_best_training_stats.png'))
+        # Plot training stats for best models
+        fig, ax = plot_training_stats(best_basenames_dataset, model_labels=model_labels_best)
+        fig.savefig(os.path.join(figpath, f'{datasetID}_best_training_stats.png'))
 
         # Plot all training stats
-        fig, ax = plot_training_stats(basenames_dataset_dict)
+        fig, ax = plot_training_stats(basenames_dataset_dict, model_labels=model_labels_all)
         fig.savefig(os.path.join(figpath, f'{datasetID}_all_training_stats.png'))
 
     # Done
