@@ -56,6 +56,7 @@ class ChineseCharacters(Dataset):
         
         # Get mask
         mask = image[0, :, :] < 0.5
+        mask = mask.long()
         
         # Add noise
         image = GaussianBlur(kernel_size=9, sigma=.01*max(self.shape))(image)
