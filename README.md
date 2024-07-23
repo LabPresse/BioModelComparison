@@ -2,6 +2,10 @@
 
 This project compares the effectiveness of deep learning architectures and training protocols on various biological datasets.
 
+## Requirements
+
+This project requires Python 3.9 or later. You can download Python from the [official website](https://www.python.org/downloads/). We recommend using [conda](https://docs.conda.io/en/latest/) to manage your Python environment. The expected size of the project is around 4.1 GB for the datasets and 5.6 GB total.
+
 ## Setting up the environment
 
 Download this project to your machine, or clone it using [git](https://git-scm.com/).
