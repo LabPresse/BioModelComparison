@@ -20,9 +20,9 @@ pip install -r requirements.txt
 
 ## Downloading data
 
-To access the datasets used in this work, you must set up a Kaggle account and download a Kaggle API key. You can do this by following the instructions [here](https://www.kaggle.com/docs/api). Briefly, you must download the API key from your Kaggle account settings and place it in the `~/.kaggle/` directory.
+To access the datasets used in this work, you must set up a [Kaggle](https://www.kaggle.com/) account and download a Kaggle API key. You can do this by following the instructions [here](https://www.kaggle.com/docs/api). Briefly, you must download the API key from your Kaggle account settings and place it in the `~/.kaggle/` directory.
 
-Next you will need to install a rar extraction tool. On macOS, you can do this by running the following command in your terminal:
+Next you will need to install a rar extraction tool. On Linux, you can do this by running the following command in your terminal:
 
 Linux (e.g., Ubuntu/Debian)
 
@@ -30,7 +30,7 @@ Linux (e.g., Ubuntu/Debian)
 sudo apt-get install unrar
 ```
 
-For macOS you can download `rar` or any other unrar-ing tools:
+For macOS, you can download `rar` or any other unrar-ing tools. Here is an example using the [Homebrew](https://brew.sh/) package manager:
 
 ```bash
 brew install rar
@@ -46,4 +46,4 @@ This will take a few minutes to download the datasets and extract them into the 
 
 ## Tutorials
 
-In this repository we include a few tutorials that demonstrate how to train deep learning models on biological datasets. These tutorials can be found in the `tutorials/` directory. In this directory we include tutorials on Datasets, Models, Training, and Evaluation.
+In this repository, we include a few tutorials that demonstrate how to train deep learning models on biological datasets. These tutorials can be found in the `tutorials/` directory. In this directory we include tutorials on Datasets, Models, Training, and Evaluation.
