@@ -122,7 +122,7 @@ class MyModel(nn.Module):
 ################################
 
 # Define a simple training function
-def train_fn(model, dataset_train, dataset_val=None, n_epochs=10):
+def train_fn(model, dataset_train, dataset_val=None, n_epochs=100):
     """Train the model."""
 
     # Set up model
