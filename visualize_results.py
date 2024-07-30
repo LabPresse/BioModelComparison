@@ -23,6 +23,11 @@ from models.vim import VisionMamba
 root = 'cluster/outfiles/'
 figpath = 'figures/'
 
+# Set random seed for torch and numpy
+seed = 1993
+torch.manual_seed(seed)
+np.random.seed(seed)
+
 
 # Plot training stats
 def plot_training_stats(basenames_dict, ffcvIDs=None, model_labels=None):
@@ -64,6 +69,7 @@ def plot_training_stats(basenames_dict, ffcvIDs=None, model_labels=None):
             spec_avg = 0
             loss_train_avg = 0
             loss_val_avg = 0
+            train_time_avg = 0
             fpr_base = np.linspace(0, 1, 500)
             tpr_avg = np.zeros(500)
             for ffcvid in ffcvIDs:
@@ -79,8 +85,9 @@ def plot_training_stats(basenames_dict, ffcvIDs=None, model_labels=None):
                 acc_avg += statistics['test_metrics']['accuracy']
                 sens_avg += statistics['test_metrics']['sensitivity']
                 spec_avg += statistics['test_metrics']['specificity']
-                loss_train_avg += np.array(statistics['train_losses'][:100])
-                loss_val_avg += np.array(statistics['val_losses'][:100])
+                loss_train_avg += np.array(statistics['train_losses'])
+                loss_val_avg += np.array(statistics['val_losses'])
+                train_time_avg += sum(statistics['epoch_times'])
                 tpr_avg += np.interp(
                     fpr_base, 
                     statistics['test_metrics']['roc_fpr'], 
@@ -93,14 +100,17 @@ def plot_training_stats(basenames_dict, ffcvIDs=None, model_labels=None):
             spec_avg /= n_avg
             loss_train_avg /= n_avg
             loss_val_avg /= n_avg
+            train_time_avg /= n_avg
             tpr_avg /= n_avg
             tpr_avg[0] = 0
 
+
+
             # Make label
             label = (
-                f'{model_labels[basename]}\n'
+                f'{model_labels[basename]} ({n_parameters} parameters)\n'
                 + '\n'.join([
-                    f'{n_parameters} parameters',
+                    f'Train Time={int(train_time_avg/60)} mins',
                     f'AUC={auc_avg:.3f}; SENS={sens_avg:.3f}',
                     f'ACC={acc_avg:.3f}; SPEC={spec_avg:.4f}'
                 ])
@@ -221,6 +231,13 @@ def plot_outputs(datasetID, basenames, n_images=3, model_labels=None):
 
         # Add to zs
         zs[model_labels[basename]] = z
+
+    # If dataset is neurons, increase the brightness of the images
+    if datasetID == 'neurons':
+        x = np.asarray(x)
+        x -= x.min(axis=(2, 3), keepdims=True)
+        x /= x.max(axis=(2, 3), keepdims=True)
+        x = np.clip(5*x, 0, 1)
 
     # Plot images
     fig = plt.figure()
