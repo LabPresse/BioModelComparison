@@ -33,7 +33,6 @@ class MyDataset(Dataset):
         self.n_samples = n_samples
         self.square_size = square_size
         
-
     def __len__(self):
         return self.n_samples
     
@@ -56,7 +55,6 @@ class MyDataset(Dataset):
 
         # Return
         return image, mask
-
 
 
 ####################
@@ -211,18 +209,17 @@ def train_fn(model, dataset_train, dataset_val=None, n_epochs=10):
     return model
 
 
-
 #############################
 ### CREATE TEST FUNCTIONS ###
 #############################
 
 # Define visualization function
-def visualize(x, y, y_pred, n_samples=5):
+def visualize(x, y, y_pred, n_samples=3):
     """Visualize data."""
 
     # Set up figure
     fig, ax = plt.subplots(n_samples, 3, figsize=(12, 3*n_samples))
-    fig.set_size_inches(9, 3*n_samples)
+    fig.set_size_inches(6, 2*n_samples)
     plt.ion()
     plt.show()
 
@@ -298,7 +295,6 @@ def test_fn(model, dataset_test):
         'sensitivity': total_sensitivity,
         'specificity': total_specificity,
     }
-
 
 
 ###################
