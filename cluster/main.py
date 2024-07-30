@@ -13,15 +13,6 @@ print('Importing local modules')
 sys.path.append( # Add parent directory to path
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-from models.conv import ConvolutionalNet
-from models.unet import UNet
-from models.resnet import ResNet
-from models.vit import VisionTransformer
-from models.vim import VisionMamba
-from data.bdello import BdelloDataset
-from data.neurons import NeuronsDataset
-from data.retinas import RetinaDataset
-from data.letters import ChineseCharacters
 from training import train_model
 from testing import evaluate_model
 from helper_functions import (
@@ -50,22 +41,27 @@ def run_training_scheme(
     if verbose:
         print('Loading dataset.')
     if dataID == 'retinas':
+        from data.retinas import RetinaDataset
         dataset = RetinaDataset(crop=(128, 128), scale=4)
         in_channels = 3
         out_channels = 2
     elif dataID == 'neurons':
+        from data.neurons import NeuronsDataset
         dataset = NeuronsDataset(crop=(128, 128), scale=8)
         in_channels = 3
         out_channels = 2
     elif dataID == 'bdello':
+        from data.bdello import BdelloDataset
         dataset = BdelloDataset(crop=(128, 128), scale=4)
         in_channels = 1
         out_channels = 2
     elif dataID == 'letters':
+        from data.letters import ChineseCharacters
         dataset = ChineseCharacters(shape=(128, 128), sigma=0.25, max_characters=1000)
         in_channels = 1
         out_channels = 2
     elif dataID == 'testing':  # Small dataset for debugging and testing
+        from data.letters import ChineseCharacters
         dataset = ChineseCharacters(shape=(128, 128), sigma=0.25, max_characters=100)
         in_channels = 1
         out_channels = 2
@@ -74,22 +70,27 @@ def run_training_scheme(
     if verbose:
         print('Setting up model.')
     if modelID == 'conv':
+        from models.conv import ConvolutionalNet
         model = ConvolutionalNet(
             in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'unet':
+        from models.unet import UNet
         model = UNet(
             in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'resnet':
+        from models.resnet import ResNet
         model = ResNet(
             in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'vit':
+        from models.vit import VisionTransformer
         model = VisionTransformer(
             img_size=128, in_channels=in_channels, out_channels=out_channels, **kwargs
         )
     elif modelID == 'vim':
+        from models.vim import VisionMamba
         model = VisionMamba(
             img_size=128, in_channels=in_channels, out_channels=out_channels, **kwargs
         )
