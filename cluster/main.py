@@ -141,23 +141,24 @@ if __name__ == "__main__":
         
     # Set up datasets, models, and options
     datasets = ['neurons', 'retinas', 'letters', 'bdello']
+    datasets = ['bdello']
     model_options = [
-        # ConvolutionalNet
-        ['conv', {'n_layers': 8}],
-        ['conv', {'n_layers': 12}],
-        ['conv', {'n_layers': 16}],
-        # UNet
-        ['unet', {'n_blocks': 2}],
-        ['unet', {'n_blocks': 3}],
-        ['unet', {'n_blocks': 4}],
+        # # ConvolutionalNet
+        # ['conv', {'n_layers': 8}],
+        # ['conv', {'n_layers': 12}],
+        # ['conv', {'n_layers': 16}],
+        # # UNet
+        # ['unet', {'n_blocks': 2}],
+        # ['unet', {'n_blocks': 3}],
+        # ['unet', {'n_blocks': 4}],
         # VisionTransformer
         ['vit', {'n_layers': 4}],
         ['vit', {'n_layers': 6}],
         ['vit', {'n_layers': 8}],
-        # VisionMamba
-        ['vim', {'n_layers': 4}],
-        ['vim', {'n_layers': 6}],
-        ['vim', {'n_layers': 8}],
+        # # VisionMamba
+        # ['vim', {'n_layers': 4}],
+        # ['vim', {'n_layers': 6}],
+        # ['vim', {'n_layers': 8}],
     ]
 
     # Set up all jobs
@@ -179,6 +180,8 @@ if __name__ == "__main__":
     modelID, dataID, options, ffcvid = all_jobs[jobID]
     savename = get_savename(modelID, dataID, options, ffcvid)
     if dataID == 'neurons' and (modelID == 'conv' or modelID == 'unet'):
+        n_epochs = 500
+    elif dataID == 'bdello' and (modelID == 'vit'):
         n_epochs = 500
     else:
         n_epochs = 100
