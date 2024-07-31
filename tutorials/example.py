@@ -1,9 +1,12 @@
 
+"""
+This is an example script that demonstrates how to train a
+simple convolutional neural network for image segmentation
+in PyTorch. The script is intended to be used as a template
+for creating custom PyTorch models and training functions.
+"""
 
 # Import libraries
-import os
-import sys
-import json
 import copy
 import torch
 import torch.nn as nn
