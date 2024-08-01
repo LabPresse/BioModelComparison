@@ -312,7 +312,9 @@ if __name__ == '__main__':
     dataset_train, dataset_val, dataset_test = random_split(dataset, [60, 20, 20])
 
     # Set up model
-    model = MyModel(1, 2)
+    in_channels = 1   # The number of input channels, for example grayscale images have 1 and RGB images have 3
+    out_channels = 2  # The number of output channels, for example binary segmentation has 2 (background and foreground)
+    model = MyModel(in_channels, out_channels)
 
     # Train model
     model = train_fn(model, dataset_train, dataset_val)
