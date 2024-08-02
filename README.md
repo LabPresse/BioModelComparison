@@ -46,4 +46,4 @@ This will take a few minutes to download the datasets and extract them into the 
 
 ## Tutorials
 
-In this repository, we include a few tutorials that demonstrate how to train deep learning models on biological datasets. These tutorials can be found in the `tutorials/` directory. In this directory we include tutorials on Datasets, Models, Training, and Evaluation.
+In this repository, we include a few tutorials that demonstrate how to train deep learning models on biological datasets. These tutorials can be found in the `tutorials/` directory.
