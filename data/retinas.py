@@ -30,7 +30,7 @@ class RetinaDataset(Dataset):
         # Set up root directory
         self.root = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            'retinas'
+            'retinas_data'
         )
 
         # Get files

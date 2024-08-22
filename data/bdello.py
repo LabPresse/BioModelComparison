@@ -30,7 +30,7 @@ class BdelloDataset(Dataset):
         # Set up root directory
         self.root = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            'bdello'
+            'bdello_data'
         )
 
         # Get files

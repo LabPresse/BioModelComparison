@@ -20,7 +20,7 @@ def get_retina_dataset():
 
     # Set paths
     url = 'https://figshare.com/ndownloader/files/34969398'
-    path_data = os.path.join(root, 'retinas')
+    path_data = os.path.join(root, 'retinas_data')
     path_data_images = os.path.join(path_data, 'images')
     path_data_masks = os.path.join(path_data, 'masks')
     download_path = os.path.join(path_data, 'FIVES.rar')
@@ -76,7 +76,7 @@ def get_retina_dataset():
 def get_bdello_datset():
 
     # Set paths
-    path_data = os.path.join(root, 'bdello')
+    path_data = os.path.join(root, 'bdello_data')
 
     # Download the dataset
     api.dataset_download_files(
@@ -115,7 +115,7 @@ def get_bdello_datset():
 def get_neurons_dataset():
 
     # Set paths
-    path_data = os.path.join(root, 'neurons')
+    path_data = os.path.join(root, 'neurons_data')
     
     # Download the dataset
     api.dataset_download_files(
@@ -152,15 +152,15 @@ if __name__ == "__main__":
 
     # Make directories
     os.makedirs(root, exist_ok=True)
-    os.makedirs(os.path.join(root, 'retinas'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'retinas', 'images'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'retinas', 'masks'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'bdello'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'bdello', 'images'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'bdello', 'masks'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'neurons'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'neurons', 'images'), exist_ok=True)
-    os.makedirs(os.path.join(root, 'neurons', 'masks'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'retinas_data'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'retinas_data', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'retinas_data', 'masks'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'bdello_data'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'bdello_data', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'bdello_data', 'masks'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'neurons_data'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'neurons_data', 'images'), exist_ok=True)
+    os.makedirs(os.path.join(root, 'neurons_data', 'masks'), exist_ok=True)
 
     # Download datasets
     get_retina_dataset()

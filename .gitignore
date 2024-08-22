@@ -160,22 +160,22 @@ cython_debug/
 #.idea/
 
 # Keep data directories, but ignore contents
-data/bdello/images/*
-data/bdello/masks/*
-!data/bdello/images/.gitkeep
-!data/bdello/masks/.gitkeep
-data/neurons/images/*
-data/neurons/masks/*
-!data/neurons/images/.gitkeep
-!data/neurons/masks/.gitkeep
-data/retinas/images/*
-data/retinas/masks/*
-!data/retinas/images/.gitkeep
-!data/retinas/masks/.gitkeep
-data/sim/images/*
-data/sim/masks/*
-!data/sim/images/.gitkeep
-!data/sim/masks/.gitkeep
+data/bdello_data/images/*
+data/bdello_data/masks/*
+!data/bdello_data/images/.gitkeep
+!data/bdello_data/masks/.gitkeep
+data/neurons_data/images/*
+data/neurons_data/masks/*
+!data/neurons_data/images/.gitkeep
+!data/neurons_data/masks/.gitkeep
+data/retinas_data/images/*
+data/retinas_data/masks/*
+!data/retinas_data/images/.gitkeep
+!data/retinas_data/masks/.gitkeep
+data/sim_data/images/*
+data/sim_data/masks/*
+!data/sim_data/images/.gitkeep
+!data/sim_data/masks/.gitkeep
 
 # Keep slurmjobs directory, but ignore contents
 cluster/slurmjobs/*
