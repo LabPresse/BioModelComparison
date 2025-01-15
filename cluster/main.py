@@ -56,8 +56,53 @@ def run_training_scheme(
         in_channels = 1
         out_channels = 2
     elif dataID == 'letters':
-        from data.letters import ChineseCharacters
-        dataset = ChineseCharacters(shape=(128, 128), sigma=0.25, max_characters=1000)
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=0.1)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=2_sigma=0.25':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=0.25, blur=2)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=4_sigma=0.25':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=0.25, blur=4)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=8_sigma=0.25':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=0.25, blur=8)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=2_sigma=0.5':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=0.5, blur=2)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=4_sigma=0.5':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=0.5, blur=4)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=8_sigma=0.5':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=0.5, blur=8)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=2_sigma=1':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=1, blur=2)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=4_sigma=1':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=1, blur=4)
+        in_channels = 1
+        out_channels = 2
+    elif dataID == 'letters_blur=8_sigma=1':
+        from data.letters import LettersDataset
+        dataset = LettersDataset(shape=(128, 128), sigma=1, blur=8)
         in_channels = 1
         out_channels = 2
     elif dataID == 'testing':  # Small dataset for debugging and testing
@@ -141,25 +186,35 @@ def run_training_scheme(
 if __name__ == "__main__":
         
     # Set up datasets, models, and options
-    datasets = ['neurons', 'retinas', 'letters', 'bdello']
-    datasets = ['bdello']
+    # datasets = ['neurons', 'retinas', 'letters', 'bdello']
+    datasets = [
+        'letters_blur=2_sigma=0.25',
+        'letters_blur=4_sigma=0.25',
+        'letters_blur=8_sigma=0.25',
+        'letters_blur=2_sigma=0.5',
+        'letters_blur=4_sigma=0.5',
+        'letters_blur=8_sigma=0.5',
+        'letters_blur=2_sigma=1',
+        'letters_blur=4_sigma=1',
+        'letters_blur=8_sigma=1',
+    ]
     model_options = [
-        # # ConvolutionalNet
-        # ['conv', {'n_layers': 8}],
-        # ['conv', {'n_layers': 12}],
-        # ['conv', {'n_layers': 16}],
-        # # UNet
-        # ['unet', {'n_blocks': 2}],
-        # ['unet', {'n_blocks': 3}],
-        # ['unet', {'n_blocks': 4}],
+        # ConvolutionalNet
+        ['conv', {'n_layers': 8}],
+        ['conv', {'n_layers': 12}],
+        ['conv', {'n_layers': 16}],
+        # UNet
+        ['unet', {'n_blocks': 2}],
+        ['unet', {'n_blocks': 3}],
+        ['unet', {'n_blocks': 4}],
         # VisionTransformer
         ['vit', {'n_layers': 4}],
         ['vit', {'n_layers': 6}],
         ['vit', {'n_layers': 8}],
-        # # VisionMamba
-        # ['vim', {'n_layers': 4}],
-        # ['vim', {'n_layers': 6}],
-        # ['vim', {'n_layers': 8}],
+        # VisionMamba
+        ['vim', {'n_layers': 4}],
+        ['vim', {'n_layers': 6}],
+        ['vim', {'n_layers': 8}],
     ]
 
     # Set up all jobs
@@ -174,27 +229,27 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         jobID = int(sys.argv[1])
 
-    # # Loop through all jobs
-    # for jobID in range(len(all_jobs)):
+    # Loop through all jobs
+    for jobID in range(len(all_jobs)):
 
-    # Get job parameters
-    modelID, dataID, options, ffcvid = all_jobs[jobID]
-    savename = get_savename(modelID, dataID, options, ffcvid)
-    if dataID == 'neurons' and (modelID == 'conv' or modelID == 'unet'):
-        n_epochs = 500
-    elif dataID == 'bdello' and (modelID == 'vit'):
-        n_epochs = 500
-    else:
-        n_epochs = 100
+        # Get job parameters
+        modelID, dataID, options, ffcvid = all_jobs[jobID]
+        savename = get_savename(modelID, dataID, options, ffcvid)
+        if dataID == 'neurons' and (modelID == 'conv' or modelID == 'unet'):
+            n_epochs = 500
+        elif dataID == 'bdello' and (modelID == 'vit'):
+            n_epochs = 500
+        else:
+            n_epochs = 100
     
-    # Run training scheme
-    run_training_scheme(
-        modelID, 
-        dataID, 
-        savename,
-        n_epochs=n_epochs,
-        **options
-    )
+        # Run training scheme
+        run_training_scheme(
+            modelID, 
+            dataID, 
+            savename,
+            n_epochs=2,
+            **options
+        )
     
     # Done
     print('Done.')

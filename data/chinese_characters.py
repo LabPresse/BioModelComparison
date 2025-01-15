@@ -8,24 +8,21 @@ from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor, RandomAffine, GaussianBlur
 
         
-# Letters dataset
-class LettersDataset(Dataset):
-    """Letters dataset."""
+# Chinese character dataset
+class ChineseCharactersDataset(Dataset):
+    """Chinese character dataset."""
     
-    def __init__(self, shape=(64, 64), sigma=.5, blur=None, transform=True, num_letters=1000):
+    def __init__(self, shape=(64, 64), sigma=.5, blur=None, transform=True, max_characters=None):
         super().__init__()
 
-        # Generate a list of all the Latin Letters
-        letters = [
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-            'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-            # 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-            # 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        # Generate a list of all the Chinese characters
+        start = int("4E00", 16)
+        end = int("9FFF", 16)
+        characters = [
+            chr(i) for i in range(start, end+1) if unicodedata.category(chr(i)).startswith('Lo')
         ]
-
-        # Repeat letters to get the desired number of letters
-        letters = letters * (num_letters // len(letters) + 1)
-        letters = letters[:num_letters]
+        if max_characters:
+            characters = characters[:max_characters]
 
         # Configure values
         if blur is None:
@@ -34,22 +31,22 @@ class LettersDataset(Dataset):
         # Set the parameters
         self.shape = shape
         self.transform = transform
-        self.letters = letters
-        self.num_letters = len(letters)
+        self.characters = characters
+        self.num_characters = len(characters)
         self.font_path = "data/fonts/NotoSansSC-Regular.otf"
         self.sigma = sigma
         self.blur = blur
 
     def __len__(self):
-        return self.num_letters
+        return self.num_characters
 
     def __getitem__(self, idx):
         
-        # Get the letter
-        letter = self.letters[idx]
+        # Get the character
+        character = self.characters[idx]
 
         # Get the image
-        image = self.print_letter(letter)
+        image = self.print_character(character)
 
         # Distort the image
         if self.transform:
@@ -93,7 +90,7 @@ class LettersDataset(Dataset):
         font_size = int(font_ratio * max(self.shape) / max(text_size) * max_font_size)
         return font_size
 
-    def print_letter(self, text, font_ratio=0.8):
+    def print_character(self, text, font_ratio=0.8):
 
         # Create an image
         image = Image.new('L', self.shape, color=255)
@@ -124,19 +121,9 @@ class LettersDataset(Dataset):
 if __name__ == "__main__":
 
     # Create a dataset
-    dataset = LettersDataset(
-        blur=2, sigma=.25,
-        # blur=4, sigma=.25,
-        # blur=8, sigma=.25,
-        # blur=2, sigma=.5,
-        # blur=4, sigma=.5,
-        # blur=8, sigma=.5,
-        # blur=2, sigma=1,
-        # blur=4, sigma=1,
-        # blur=8, sigma=1,
-    )
+    dataset = ChineseCharactersDataset()
 
-    # Print some letters
+    # Print some characters
     fig, ax = plt.subplots(1, 2)
     plt.ion()
     plt.show()
