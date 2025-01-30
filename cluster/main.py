@@ -201,19 +201,19 @@ if __name__ == "__main__":
     model_options = [
         # ConvolutionalNet
         ['conv', {'n_layers': 8}],
-        # ['conv', {'n_layers': 12}],
+        ['conv', {'n_layers': 12}],
         ['conv', {'n_layers': 16}],
         # # UNet
         ['unet', {'n_blocks': 2}],
-        # ['unet', {'n_blocks': 3}],
+        ['unet', {'n_blocks': 3}],
         ['unet', {'n_blocks': 4}],
         # # VisionTransformer
         ['vit', {'n_layers': 4}],
-        # ['vit', {'n_layers': 6}],
+        ['vit', {'n_layers': 6}],
         ['vit', {'n_layers': 8}],
         # # VisionMamba
         ['vim', {'n_layers': 4}],
-        # ['vim', {'n_layers': 6}],
+        ['vim', {'n_layers': 6}],
         ['vim', {'n_layers': 8}],
     ]
 
