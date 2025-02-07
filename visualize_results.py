@@ -255,8 +255,8 @@ if __name__ == "__main__":
     ### Plot robustness ###
 
     # Initialize lists
-    blurs = [2, 4, 8]
-    sigmas = [0.25, 0.5, 1]
+    blurs = [4, 8, 16]
+    sigmas = [0.5, 1, 2]
     models = ['conv', 'unet', 'vit', 'vim']
 
     # Loop over models
@@ -302,7 +302,7 @@ if __name__ == "__main__":
                 sens_avg = 0
                 spec_avg = 0
                 auc_avg = 0
-                for ffid in range(5):
+                for ffid in range(3):
                     with open(os.path.join(root, f'{best_model}_ffcv={ffid}.json'), 'r') as f:
                         statistics = json.load(f)
                     acc_avg += statistics['test_metrics']['accuracy'] / 5

@@ -125,15 +125,8 @@ if __name__ == "__main__":
 
     # Create a dataset
     dataset = LettersDataset(
-        blur=2, sigma=.25,
-        # blur=4, sigma=.25,
-        # blur=8, sigma=.25,
-        # blur=2, sigma=.5,
-        # blur=4, sigma=.5,
-        # blur=8, sigma=.5,
-        # blur=2, sigma=1,
-        # blur=4, sigma=1,
-        # blur=8, sigma=1,
+        shape=(128, 128),
+        blur=16, sigma=2,
     )
 
     # Print some letters

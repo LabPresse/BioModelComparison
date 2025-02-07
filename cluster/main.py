@@ -60,51 +60,17 @@ def run_training_scheme(
         dataset = LettersDataset(shape=(128, 128), sigma=0.1)
         in_channels = 1
         out_channels = 2
-    elif dataID == 'letters_blur=2_sigma=0.25':
+    elif 'letters' in dataID:
         from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=0.25, blur=2)
+        options = {}
+        if 'blur' in dataID:
+            options['blur'] = float(dataID.split('blur=')[1].split('_')[0])
+        if 'sigma' in dataID:
+            options['sigma'] = float(dataID.split('sigma=')[1].split('_')[0])
+        dataset = LettersDataset(shape=(128, 128), **options)
         in_channels = 1
         out_channels = 2
-    elif dataID == 'letters_blur=4_sigma=0.25':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=0.25, blur=4)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'letters_blur=8_sigma=0.25':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=0.25, blur=8)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'letters_blur=2_sigma=0.5':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=0.5, blur=2)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'letters_blur=4_sigma=0.5':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=0.5, blur=4)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'letters_blur=8_sigma=0.5':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=0.5, blur=8)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'letters_blur=2_sigma=1':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=1, blur=2)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'letters_blur=4_sigma=1':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=1, blur=4)
-        in_channels = 1
-        out_channels = 2
-    elif dataID == 'letters_blur=8_sigma=1':
-        from data.letters import LettersDataset
-        dataset = LettersDataset(shape=(128, 128), sigma=1, blur=8)
-        in_channels = 1
-        out_channels = 2
+
     elif dataID == 'testing':  # Small dataset for debugging and testing
         from data.letters import ChineseCharacters
         dataset = ChineseCharacters(shape=(128, 128), sigma=0.25, max_characters=100)
@@ -187,17 +153,10 @@ if __name__ == "__main__":
         
     # Set up datasets, models, and options
     # datasets = ['neurons', 'retinas', 'letters', 'bdello']
-    datasets = [
-        'letters_blur=2_sigma=0.25',
-        'letters_blur=4_sigma=0.25',
-        'letters_blur=8_sigma=0.25',
-        'letters_blur=2_sigma=0.5',
-        'letters_blur=4_sigma=0.5',
-        'letters_blur=8_sigma=0.5',
-        'letters_blur=2_sigma=1',
-        'letters_blur=4_sigma=1',
-        'letters_blur=8_sigma=1',
-    ]
+    datasets = []
+    for blur in [2, 4, 8, 16, 32]:
+        for sigma in [.25, .5, 1, 2, 4]:
+            datasets.append(f'letters_blur={blur}_sigma={sigma}')
     model_options = [
         # ConvolutionalNet
         ['conv', {'n_layers': 8}],
@@ -223,6 +182,15 @@ if __name__ == "__main__":
         for dataID in datasets:                     # Datasets
             for modelID, options in model_options:  # Models
                 all_jobs.append((modelID, dataID, options, ffcvid))
+
+    # Filter jobs that are already complete
+    all_jobs_filtered = []
+    for modelID, dataID, options, ffcvid in all_jobs:
+        savename = get_savename(modelID, dataID, options, ffcvid)
+        if f'{savename}.json' not in os.listdir(outpath):
+            all_jobs_filtered.append((modelID, dataID, options, ffcvid))
+    print(f'Running {len(all_jobs_filtered)} jobs out of {len(all_jobs)} total.')
+    all_jobs = all_jobs_filtered
     
     # Get job id from sys
     jobID = 0
