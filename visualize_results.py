@@ -255,8 +255,8 @@ if __name__ == "__main__":
     ### Plot robustness ###
 
     # Initialize lists
-    blurs = [4, 8, 16]
-    sigmas = [0.5, 1, 2]
+    blurs = [8, 16, 32]
+    sigmas = [1, 2, 4]
     models = ['conv', 'unet', 'vit', 'vim']
 
     # Loop over models
