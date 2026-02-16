@@ -2,6 +2,10 @@
 
 This project compares the effectiveness of deep learning architectures and training protocols on various biological datasets.
 
+**⚠️ Known Issue (ViM Models)**
+
+As of Feb 16, 2026, ViM models do not run correctly in this repository due to a breaking issue in the zetascale dependency. This originates upstream and cannot currently be fixed within this repository. For now, please avoid running experiments with ViM models. If needed, users may be able to resolve this by identifying and pinning a compatible zetascale version.
+
 ## Requirements
 
 This project requires Python 3.9 or later. You can download Python from the [official website](https://www.python.org/downloads/). We recommend using [conda](https://docs.conda.io/en/latest/) to manage your Python environment. The expected size of the project is around 4.1 GB for the datasets and 5.6 GB total.
